@@ -18,6 +18,7 @@ app.post('/users', userService.createUser);
 app.put('/users/:id', userService.updateUser);
 app.delete('/users/:id', userService.deleteUser);
 
+//server running in port 3000
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
