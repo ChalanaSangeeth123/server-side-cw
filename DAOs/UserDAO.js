@@ -40,6 +40,43 @@ class UserDAO{
             console.error(ex)
        }
     }
+
+    async getAllUsers() {
+        try {
+            return new Promise((resolve, reject) => {
+                pool.all('SELECT id, email, fn, sn FROM users', [], (err, rows) => {
+                    if(err) {
+                        reject(err)
+                    }
+                    resolve(createResponse(true, rows))
+                })
+            })
+        } catch(ex) {
+            console.error(ex)
+            return this.createResponse(false, null, ex)
+        }
+    }
+
+    async getUserById(id) {
+        try {
+            return new Promise((resolve, reject) => {
+                pool.get('SELECT id, email, fn, sn FROM users WHERE id = ?', [id], (err, row) => {
+                    if(err) {
+                        reject(err)
+                    }
+                    if(!row) {
+                        resolve(this.createResponse(false, null, 'User not found'))
+                    } else {
+                        resolve(this.createResponse(true, row))
+                    }
+                })
+            })
+        } catch(ex) {
+            console.error(ex)
+            return this.createResponse(false, null, ex)
+        }
+    }
 }
+
 
 module.exports = UserDAO;

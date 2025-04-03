@@ -42,6 +42,18 @@ app.post('/getapikey', async (req, res) => {
     res.json(data);
 });
 
+app.get('/users', checkSession, async (req, res) => {
+    const userService = new UserService();
+    const result = await userService.getAllUsers();
+    res.json(result);
+});
+
+app.get('/users/:id', checkSession, async (req, res) => {
+    const userService = new UserService();
+    const result = await userService.getUserById(req.params.id);
+    res.json(result);
+});
+
 app.get('/contactus', checkSession, (req, res) => {
     res.send('<h1>Contact us</h1>');
 });

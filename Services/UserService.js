@@ -53,6 +53,27 @@ class UserService {
             return this.userdao.createResponse(false, null, ex.message);
         }
     }
+
+     
+    async getAllUsers() {
+        try {
+            const result = await this.userdao.getAllUsers();
+            return result;
+        } catch (ex) {
+            console.error(ex);
+            return this.userdao.createResponse(false, null, ex.message);
+        }
+    }
+    
+    async getUserById(id) {
+        try {
+            const result = await this.userdao.getUserById(id);
+            return result;
+        } catch (ex) {
+            console.error(ex);
+            return this.userdao.createResponse(false, null, ex.message);
+        }
+    }
 }
 
 module.exports = UserService;
