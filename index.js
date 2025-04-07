@@ -1,28 +1,27 @@
 const express = require('express');
 const session = require('express-session');
-const UserService = require('./Services/UserService');
-const APIKey = require('./Services/ApiKeyService');
-const apikeyMiddleware = require('./Middleware/APIAuth/APIAuthMiddleWare');
-const checkSession = require('./Middleware/SessionAuth/SessionAuth');
-const countryRouter = require('./Routers/CountryRouter');
+const UserService = require('./serverside/Services/UserService');
+const APIKeyService = require('./serverside/Services/ApiKeyService');
+const apikeyMiddleware = require('./serverside/Middleware/APIAuth/APIAuthMiddleWare');
+const checkSession = require('./serverside/Middleware/SessionAuth/SessionAuth');
+const countryRouter = require('./serverside/Routes/CountryRoutes');
+require('dotenv').config();
 
 const app = express();
 app.use(express.json());
 app.use(session({
-    secret: 'my_secret_',
+    secret: process.env.SESSION_SECRET || 'fallback_secret_32_chars_long',
     resave: false,
     saveUninitialized: false,
-    cookie: {
-        secure: false,
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000
-    }
+    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
 }));
+
+app.use(express.static('public')); // Serve front-end files
 
 const PORT_NUMBER = 5000;
 
 app.use('/api', apikeyMiddleware);
-app.use('/api', countryRouter); // Replace attractions routes with country routes
+app.use('/api', countryRouter);
 
 app.post('/registerUser', async (req, res) => {
     const userService = new UserService();
@@ -36,10 +35,22 @@ app.post('/login', async (req, res) => {
     res.json(result);
 });
 
-app.post('/getapikey', async (req, res) => {
-    const apikeyService = new APIKey();
+app.post('/api/getapikey', checkSession, async (req, res) => {
+    const apikeyService = new APIKeyService();
     const data = await apikeyService.create(req);
     res.json(data);
+});
+
+app.get('/api/keys', checkSession, async (req, res) => {
+    const apikeyService = new APIKeyService();
+    const result = await apikeyService.getUserKeys(req.session.user.id);
+    res.json(result);
+});
+
+app.delete('/api/keys/:key', checkSession, async (req, res) => {
+    const apikeyService = new APIKeyService();
+    const result = await apikeyService.revokeKey(req.params.key, req.session.user.id);
+    res.json(result);
 });
 
 app.get('/users', checkSession, async (req, res) => {
@@ -54,12 +65,8 @@ app.get('/users/:id', checkSession, async (req, res) => {
     res.json(result);
 });
 
-app.get('/contactus', checkSession, (req, res) => {
-    res.send('<h1>Contact us</h1>');
-});
-
-app.get('/aboutus', (req, res) => {
-    res.sendFile(__dirname + '/views/test.html');
+app.get('/', (req, res) => {
+    res.sendFile(__dirname + '/public/index.html');
 });
 
 app.listen(PORT_NUMBER, (err) => {
