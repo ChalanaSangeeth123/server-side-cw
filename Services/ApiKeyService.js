@@ -1,21 +1,31 @@
+const { v4: uuidv4 } = require('uuid');
+const APIKeyDAO = require('../DAOs/APIKeyDAO');
 
-const {v4: uuidv4} = require('uuid')
-const API = require('../DAOs/APIKeyDAO')
-
-class APIKey{
-
-    constructor(){
-        this.apikeydao = new API()
+class APIKeyService {
+    constructor() {
+        this.apikeydao = new APIKeyDAO();
     }
-    async create(req)
-    {
-        const key = uuidv4()
-        return await this.apikeydao.create(req.body.owner, key)
+
+    async create(req) {
+        const key = uuidv4();
+        return await this.apikeydao.create(req.session.user.id, key);
     }
-    async validatekey(key){
-        const result = await this.apikeydao.getKey(key)
-        //console.log(result)
-        return result
+
+    async validatekey(key) {
+        const result = await this.apikeydao.getKey(key);
+        if (result.success) {
+            await this.apikeydao.updateUsage(key);
+        }
+        return result;
+    }
+
+    async getUserKeys(userId) {
+        return await this.apikeydao.getKeysByUser(userId);
+    }
+
+    async revokeKey(key, userId) {
+        return await this.apikeydao.updateKeyStatus(key, userId, 0);
     }
 }
-module.exports = APIKey
+
+module.exports = APIKeyService;
