@@ -27,6 +27,14 @@ class CountryService {
             throw ex;
         }
     }
-}
 
+
+async getByName(name) {
+    const results = await this.countryDAO.getAll();
+    if (!results.success) throw new Error(results.error);
+    const country = results.data.find(c => c.name.toLowerCase() === name.toLowerCase());
+    if (!country) throw new Error('Country not found');
+    return country;
+}
+}
 module.exports = CountryService;
