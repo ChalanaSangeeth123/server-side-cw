@@ -13,7 +13,7 @@ class CountryDAO {
     }
 
     async getAll() {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             axios.get('https://restcountries.com/v3.1/all')
                 .then(response => {
                     const filteredData = response.data.map(country => ({
@@ -26,10 +26,11 @@ class CountryDAO {
                     resolve(this.createResponse(true, filteredData));
                 })
                 .catch(err => {
-                    reject(this.createResponse(false, null, err));
+                    resolve(this.createResponse(false, null, err.message));
                 });
         });
     }
+
 
     // Optional: If you want to store countries locally, though not required for RestCountries
     async create(req) {
