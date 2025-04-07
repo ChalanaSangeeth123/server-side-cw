@@ -48,4 +48,13 @@ router.post('/countries',
     }
 );
 
+router.get('/countries/:name', apikeyMiddleware, checkSession, async (req, res) => {
+    try {
+        const country = await countryService.getByName(req.params.name);
+        res.json({ success: true, data: country, timestamp: new Date().toISOString() });
+    } catch (error) {
+        res.status(404).json({ success: false, error: error.message, timestamp: new Date().toISOString() });
+    }
+});
+
 module.exports = router;
