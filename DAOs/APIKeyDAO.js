@@ -42,19 +42,15 @@ class APIKeyDAO {
         });
     }
 
-    // Increment usage count and update last_used for tracking
+    // Increment usage count for tracking
     async incrementUsage(key) {
-        const lastUsed = new Date().toISOString(); // Current timestamp in ISO format
         return new Promise((resolve, reject) => {
             pool.run(
-                'UPDATE apikeys SET usage_count = usage_count + 1, last_used = ? WHERE key = ?',
-                [lastUsed, key],
+                'UPDATE apikeys SET usage_count = usage_count + 1 WHERE key = ?',
+                [key],
                 (err) => {
-                    if (err) {
-                        reject(createResponse(false, null, 'Error incrementing usage'));
-                    } else {
-                        resolve(createResponse(true, 'Usage incremented'));
-                    }
+                    if (err) reject(err);
+                    resolve();
                 }
             );
         });
