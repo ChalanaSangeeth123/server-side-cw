@@ -1,8 +1,8 @@
-const CountryDAO = require('../DAOs/CountryDao');
+const CountryDao = require('../DAOs/CountryDAO');
 
 class CountryService {
     constructor() {
-        this.countrydao = new CountryDAO();
+        this.countrydao = new CountryDao();
     }
 
     async getCountry(name) {
