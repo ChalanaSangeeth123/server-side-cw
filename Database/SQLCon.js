@@ -1,7 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 require('dotenv').config();
 
-// Initialize SQLite database
 const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db', (err) => {
     if (err) {
         console.error('Database connection error:', err);
@@ -27,9 +26,16 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
                 usage_count INTEGER DEFAULT 0,
                 is_active INTEGER DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_used TEXT,  -- Add this field
                 FOREIGN KEY (owner) REFERENCES users(id)
             )
         `);
+        
+        pool.run(`ALTER TABLE apikeys ADD COLUMN last_used TEXT`, (err) => {
+            if (err && !err.message.includes('duplicate column name')) {
+                console.error('Error adding last_used column:', err);
+            }
+        });
     }
 });
 
