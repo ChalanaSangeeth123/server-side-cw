@@ -6,7 +6,6 @@ const pool = new Database.Database('./attractions.db', (err) => {
     }
     console.log('✅ SQLite Connected Successfully!');
 
-    // Initialize database schema
     pool.serialize(() => {
         // Create users table
         pool.run(`
@@ -22,11 +21,11 @@ const pool = new Database.Database('./attractions.db', (err) => {
             if (err) console.error('Error creating users table:', err);
         });
 
-        // Create apikeys table
+        // Create apikeys table with user_id column
         pool.run(`
             CREATE TABLE IF NOT EXISTS apikeys (
                 key TEXT PRIMARY KEY,
-                user_id INTEGER,
+                user_id INTEGER NOT NULL,
                 name TEXT NOT NULL,
                 is_active INTEGER DEFAULT 1,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -45,7 +44,7 @@ const pool = new Database.Database('./attractions.db', (err) => {
                 name TEXT NOT NULL,
                 currency TEXT,
                 capital TEXT,
-                languages TEXT, -- Store as JSON string
+                languages TEXT,
                 flag TEXT
             )
         `, (err) => {
@@ -54,31 +53,4 @@ const pool = new Database.Database('./attractions.db', (err) => {
     });
 });
 
-
-/*const mysql = require('mysql2/promise')
-require('dotenv').config()
-
-const pool = mysql.createPool({
-    host: "localhost",
-    user: "eventsuser2",
-    password: "abc123",
-    database: "eventsdb",
-    waitForConnections: true,
-    connectionLimit:10,
-    queueLimit:0
-})
-
-async function testConnection() {
-    try {
-      const connection = await pool.getConnection();
-      console.log('✅ MySQL Connected Successfully!');
-      connection.release(); // Release connection back to the pool
-    } catch (error) {
-      console.error('❌ MySQL Connection Failed:', error);
-      process.exit(1); // Exit process if connection fails
-    }
-  }
-
- // testConnection()
-*/
-module.exports = pool
+module.exports = pool;

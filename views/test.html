@@ -3,80 +3,27 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
+        body { font-family: Arial, Helvetica, sans-serif; }
+        * { box-sizing: border-box; }
         input[type=text], input[type=password], button {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #ccc;
-            margin-top: 6px;
-            margin-bottom: 16px;
-            resize: vertical;
+            width: 100%; padding: 12px; border: 1px solid #ccc; margin-top: 6px; margin-bottom: 16px; resize: vertical;
         }
-
-        button {
-            background-color: #04AA6D;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #45a049;
-        }
-
-        .container {
-            border-radius: 5px;
-            background-color: #f2f2f2;
-            padding: 10px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-
-        .column {
-            float: left;
-            width: 50%;
-            margin-top: 6px;
-            padding: 20px;
-        }
-
-        .row:after {
-            content: "";
-            display: table;
-            clear: both;
-        }
-
-        @media screen and (max-width: 600px) {
-            .column, button {
-                width: 100%;
-                margin-top: 0;
-            }
-        }
-
-        #apiKeyOutput {
-            margin-top: 20px;
-            padding: 10px;
-            background-color: #fff;
-            border: 1px solid #ccc;
-            display: none;
-        }
+        button { background-color: #04AA6D; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .container { border-radius: 5px; background-color: #f2f2f2; padding: 10px; max-width: 600px; margin: 0 auto; }
+        .column { float: left; width: 50%; margin-top: 6px; padding: 20px; }
+        .row:after { content: ""; display: table; clear: both; }
+        #apiKeyOutput, #keysList { margin-top: 20px; padding: 10px; background-color: #fff; border: 1px solid #ccc; }
+        @media screen and (max-width: 600px) { .column, button { width: 100%; margin-top: 0; } }
     </style>
 </head>
 <body>
-
 <h2>API Key Management</h2>
-<p>Use this page to register, login, and generate an API key for the RestCountries API.</p>
+<p>Use this page to register, login, and manage API keys for the RestCountries API.</p>
 
 <div class="container">
     <div style="text-align:center">
         <h2>Manage Your API Access</h2>
-        <p>Register, login, or generate an API key:</p>
     </div>
     <div class="row">
         <div class="column">
@@ -102,13 +49,12 @@
                 <input type="password" id="loginPassword" name="password" placeholder="Your password..">
                 <button type="submit">Login</button>
             </form>
-            <form id="apiKeyForm" style="margin-top: 20px;">
-                <h3>Generate API Key</h3>
-                <label for="owner">Owner Name</label>
-                <input type="text" id="owner" name="owner" placeholder="Your name..">
-                <button type="submit">Generate Key</button>
-            </form>
-            <div id="apiKeyOutput"></div>
+            <div style="margin-top: 20px;">
+                <button id="generateKeyBtn">Generate API Key</button>
+                <button id="listKeysBtn">List My Keys</button>
+                <div id="apiKeyOutput"></div>
+                <div id="keysList"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -143,35 +89,55 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),
-            credentials: 'include' // Include cookies for session
+            credentials: 'include'
         });
         const result = await response.json();
         alert(result.success ? 'Login successful!' : 'Error: ' + result.error);
     });
 
-    // API Key Form
-    document.getElementById('apiKeyForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-            owner: document.getElementById('owner').value
-        };
+    // Generate API Key
+    document.getElementById('generateKeyBtn').addEventListener('click', async () => {
         const response = await fetch('/getapikey', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-            credentials: 'include' // Include cookies for session
+            credentials: 'include'
         });
         const result = await response.json();
         const output = document.getElementById('apiKeyOutput');
+        output.style.display = 'block';
+        output.textContent = result.success ? `Your API Key: ${result.data}` : `Error: ${result.error}`;
+    });
+
+    // List API Keys
+    document.getElementById('listKeysBtn').addEventListener('click', async () => {
+        const response = await fetch('/apikeys', {
+            method: 'GET',
+            credentials: 'include'
+        });
+        const result = await response.json();
+        const keysList = document.getElementById('keysList');
+        keysList.style.display = 'block';
         if (result.success) {
-            output.style.display = 'block';
-            output.textContent = `Your API Key: ${result.data}`;
+            keysList.innerHTML = '<h3>Your API Keys:</h3>' + result.data.map(key => 
+                `<p>Key: ${key.key} | Active: ${key.is_active} | Usage: ${key.usage_count} | <button onclick="revokeKey('${key.key}')">Revoke</button></p>`
+            ).join('');
         } else {
-            output.style.display = 'block';
-            output.textContent = `Error: ${result.error}`;
+            keysList.textContent = `Error: ${result.error}`;
         }
     });
-</script>
 
+    // Revoke API Key
+    async function revokeKey(key) {
+        const response = await fetch('/revokeapikey', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key }),
+            credentials: 'include'
+        });
+        const result = await response.json();
+        alert(result.success ? 'Key revoked!' : 'Error: ' + result.error);
+        document.getElementById('listKeysBtn').click(); // Refresh list
+    }
+</script>
 </body>
 </html>

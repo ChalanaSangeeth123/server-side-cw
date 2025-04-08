@@ -1,33 +1,38 @@
 const express = require('express');
 const session = require('express-session');
-const UserService = require('./serverside/Services/UserService');
-const APIKeyService = require('./serverside/Services/ApiKeyService');
-const apikeyMiddleware = require('./serverside/Middleware/APIAuth/APIAuthMiddleWare');
-const checkSession = require('./serverside/Middleware/SessionAuth/SessionAuth');
-const countryRouter = require('./serverside/Routes/CountryRoutes');
-require('dotenv').config();
+const UserService = require('./services/userservice'); // Fix case
+const APIKey = require('./services/apikeyservice'); // Fix case
+const apikeyMiddleware = require('./middleware/apiauth/apiauthmiddleware'); // Fix case
+const checkSession = require('./middleware/sessionauth/sessionauth'); // Fix case
+const countryRouter = require('./Routers/CountryRouter');
+
+
 
 const app = express();
 app.use(express.json());
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'fallback_secret_32_chars_long',
+    secret: 'my_secret_',
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 }
+    cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000
+    }
 }));
-
-app.use(express.static('public')); // Serve front-end files
 
 const PORT_NUMBER = 5000;
 
-app.use('/api', apikeyMiddleware);
-app.use('/api', countryRouter);
+// CHANGE THIS LINE: You're currently mounting at '/api' but should be '/api/countries'
+app.use('/api/countries', countryRouter);
 
+// Rest of your routes...
 app.post('/registerUser', async (req, res) => {
     const userService = new UserService();
     const result = await userService.create(req);
     res.json(result);
 });
+
 
 app.post('/login', async (req, res) => {
     const userService = new UserService();
@@ -35,21 +40,28 @@ app.post('/login', async (req, res) => {
     res.json(result);
 });
 
-app.post('/api/getapikey', checkSession, async (req, res) => {
-    const apikeyService = new APIKeyService();
-    const data = await apikeyService.create(req);
-    res.json(data);
+app.post('/getapikey', checkSession, async (req, res) => {
+    try {
+        const apikeyService = new APIKey();
+        req.body.owner = req.session.user.id; // Use logged-in user ID
+        const data = await apikeyService.create(req);
+        res.json(data);
+    } catch (error) {
+        console.error('Error generating API key:', error);
+        res.status(500).json({ success: false, error: 'Internal server error' });
+    }
 });
 
-app.get('/api/keys', checkSession, async (req, res) => {
-    const apikeyService = new APIKeyService();
+app.get('/apikeys', checkSession, async (req, res) => {
+    const apikeyService = new APIKey();
     const result = await apikeyService.getUserKeys(req.session.user.id);
     res.json(result);
 });
 
-app.delete('/api/keys/:key', checkSession, async (req, res) => {
-    const apikeyService = new APIKeyService();
-    const result = await apikeyService.revokeKey(req.params.key, req.session.user.id);
+app.post('/revokeapikey', checkSession, async (req, res) => {
+    const apikeyService = new APIKey();
+    const { key } = req.body;
+    const result = await apikeyService.revokeKey(key);
     res.json(result);
 });
 
@@ -65,9 +77,14 @@ app.get('/users/:id', checkSession, async (req, res) => {
     res.json(result);
 });
 
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/public/index.html');
+app.get('/contactus', checkSession, (req, res) => {
+    res.send('<h1>Contact us</h1>');
 });
+
+app.get('/aboutus', (req, res) => {
+    res.sendFile(__dirname + '/text.html'); // Fixed path
+});
+
 
 app.listen(PORT_NUMBER, (err) => {
     if (err) {
