@@ -1,77 +1,52 @@
 const UserDAO = require('../DAOs/UserDAO');
 const { generateHash, verify } = require('../Utilities/bcryptUtil');
+const { createResponse } = require('../Utilities/createResponse');
 
 class UserService {
     constructor() {
         this.userdao = new UserDAO();
     }
 
+    // Register new user
     async create(req) {
         try {
             const { email, password, fn, sn } = req.body;
             if (!email || !password || !fn || !sn) {
-                return this.userdao.createResponse(false, null, 'Missing required fields');
+                return createResponse(false, null, 'All fields are required');
             }
-
-            // Check if email exists
-            const existingUser = await this.userdao.getByEmail({ body: { email } });
-            if (existingUser.success && existingUser.data) {
-                return this.userdao.createResponse(false, null, 'Email already registered');
+            const existingUser = await this.userdao.getByEmail(email);
+            if (existingUser.data) {
+                return createResponse(false, null, 'Email already exists');
             }
-
-            req.body.password = await generateHash(password);
-            const result = await this.userdao.create(req);
-            return result;
+            return await this.userdao.create(req);
         } catch (ex) {
             console.error(ex);
-            if (ex.code === 'SQLITE_CONSTRAINT') {
-                return this.userdao.createResponse(false, null, 'Email already registered');
-            }
-            return this.userdao.createResponse(false, null, ex.message);
+            return createResponse(false, null, ex);
         }
     }
 
+    // Authenticate user and create session
     async authenticate(req) {
         try {
-            const result = await this.userdao.getByEmail(req);
-            if (!result.success || !result.data) {
-                return this.userdao.createResponse(false, null, 'User not found');
+            const { email, password } = req.body;
+            const result = await this.userdao.getByEmail(email);
+            if (!result.data) {
+                return createResponse(false, null, 'User not found');
             }
-            const isMatch = await verify(req.body.password, result.data.password);
-            if (isMatch) {
-                req.session.user = {
-                    id: result.data.id,
-                    email: result.data.email,
-                    name: result.data.fn
-                };
-                req.session.isAuthenticated = true;
-                return this.userdao.createResponse(true, req.session.user);
+            const isMatch = await verify(password, result.data.password);
+            if (!isMatch) {
+                return createResponse(false, null, 'Invalid credentials');
             }
-            return this.userdao.createResponse(false, null, 'Invalid password');
+            req.session.user = {
+                id: result.data.id,
+                email: result.data.email,
+                name: result.data.fn
+            };
+            req.session.isAuthenticated = true;
+            return createResponse(true, 'Login successful');
         } catch (ex) {
             console.error(ex);
-            return this.userdao.createResponse(false, null, ex.message);
-        }
-    }
-
-     
-    async getAllUsers() {
-        try {
-            const result = await this.userdao.getAllUsers();
-            return result;
-        } catch (ex) {
-            console.error(ex);
-            return this.userdao.createResponse(false, null, ex.message);
-        }
-    }
-    
-    async getUserById(id) {
-        try {
-            const result = await this.userdao.getUserById(id);
-            return result;
-        } catch (ex) {
-            console.error(ex);
-            return this.userdao.createResponse(false, null, ex.message);
+            return createResponse(false, null, ex);
         }
     }
 }
