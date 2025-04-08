@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const CountryService = require('../Services/CountryService');
-const APIKey = require('../Services/APIKey');
+const APIKey = require('../Services/ApiKeyService');
 
 const countryService = new CountryService();
 const apiKeyService = new APIKey();
