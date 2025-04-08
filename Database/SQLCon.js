@@ -1,12 +1,12 @@
-const Database = require('sqlite3');
-const pool = new Database.Database('./attractions.db', (err) => {
-    if (err) {
-        console.error('❌ SQLite Connection Failed:', err);
-        process.exit(1);
-    }
-    console.log('✅ SQLite Connected Successfully!');
+const sqlite3 = require('sqlite3').verbose();
+require('dotenv').config();
 
-    pool.serialize(() => {
+// Initialize SQLite database
+const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db', (err) => {
+    if (err) {
+        console.error('Database connection error:', err);
+    } else {
+        console.log('Connected to SQLite database');
         // Create users table
         pool.run(`
             CREATE TABLE IF NOT EXISTS users (
@@ -15,42 +15,22 @@ const pool = new Database.Database('./attractions.db', (err) => {
                 password TEXT NOT NULL,
                 fn TEXT NOT NULL,
                 sn TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        `, (err) => {
-            if (err) console.error('Error creating users table:', err);
-        });
-
-        // Create apikeys table with user_id column
+        `);
+        // Create api_keys table with usage tracking
         pool.run(`
             CREATE TABLE IF NOT EXISTS apikeys (
-                key TEXT PRIMARY KEY,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                is_active INTEGER DEFAULT 1,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                last_used DATETIME,
-                usage_count INTEGER DEFAULT 0,
-                FOREIGN KEY (user_id) REFERENCES users(id)
-            )
-        `, (err) => {
-            if (err) console.error('Error creating apikeys table:', err);
-        });
-
-        // Create countries table
-        pool.run(`
-            CREATE TABLE IF NOT EXISTS countries (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                currency TEXT,
-                capital TEXT,
-                languages TEXT,
-                flag TEXT
+                owner INTEGER NOT NULL,
+                key TEXT UNIQUE NOT NULL,
+                usage_count INTEGER DEFAULT 0,
+                is_active INTEGER DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (owner) REFERENCES users(id)
             )
-        `, (err) => {
-            if (err) console.error('Error creating countries table:', err);
-        });
-    });
+        `);
+    }
 });
 
 module.exports = pool;
