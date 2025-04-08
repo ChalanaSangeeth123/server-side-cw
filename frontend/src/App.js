@@ -13,7 +13,9 @@ const App = () => {
     return (
         <Router>
             <div className="app">
-                <h2>Country API Web Interface</h2>
+                <div className="header">
+                    <h2>Country API Dashboard</h2>
+                </div>
                 <nav>
                     <Link to="/">Register</Link> | <Link to="/login">Login</Link> | 
                     {loggedIn && <Link to="/apikey">Generate API Key</Link>} | 
