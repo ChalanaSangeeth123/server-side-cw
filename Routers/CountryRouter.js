@@ -1,29 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const CountryService = require('../services/countryservice');
-const apikeyMiddleware = require('../middleware/apiauth/apiauthmiddleware');
+const CountryService = require('../Services/CountryService');
 
 const countryService = new CountryService();
 
-// Route for getting all countries
-router.get('/', apikeyMiddleware, async (req, res) => {
-    try {
-        console.log('Processing /api/countries request...');
-        const countries = await countryService.getAll();
-        console.log('Sending', countries.length, 'countries');
-        
-        res.json({
-            success: true,
-            data: countries,
-            timestamp: new Date().toISOString()
-        });
-    } catch (error) {
-        console.error('Route error:', error.message);
-        res.status(500).json({
-            success: false,
-            error: error.message || 'Failed to fetch countries',
-            timestamp: new Date().toISOString()
-        });
+// Get country data by name
+router.get('/:name', async (req, res) => {
+    const result = await countryService.getCountry(req.params.name);
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(500).json(result);
     }
 });
 
