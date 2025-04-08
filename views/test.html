@@ -1,143 +1,227 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country API Web Interface</title>
     <style>
-        body { font-family: Arial, Helvetica, sans-serif; }
-        * { box-sizing: border-box; }
-        input[type=text], input[type=password], button {
-            width: 100%; padding: 12px; border: 1px solid #ccc; margin-top: 6px; margin-bottom: 16px; resize: vertical;
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
         }
-        button { background-color: #04AA6D; color: white; border: none; cursor: pointer; }
-        button:hover { background-color: #45a049; }
-        .container { border-radius: 5px; background-color: #f2f2f2; padding: 10px; max-width: 600px; margin: 0 auto; }
-        .column { float: left; width: 50%; margin-top: 6px; padding: 20px; }
-        .row:after { content: ""; display: table; clear: both; }
-        #apiKeyOutput, #keysList { margin-top: 20px; padding: 10px; background-color: #fff; border: 1px solid #ccc; }
-        @media screen and (max-width: 600px) { .column, button { width: 100%; margin-top: 0; } }
+        h2 {
+            text-align: center;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="email"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #04AA6D;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #response {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            display: none;
+        }
+        #country-data {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
-<h2>API Key Management</h2>
-<p>Use this page to register, login, and manage API keys for the RestCountries API.</p>
+    <h2>Country API Web Interface</h2>
 
-<div class="container">
-    <div style="text-align:center">
-        <h2>Manage Your API Access</h2>
+    <!-- Registration Section -->
+    <div class="section">
+        <h3>Register</h3>
+        <form id="register-form">
+            <label for="reg-email">Email:</label>
+            <input type="email" id="reg-email" name="email" required>
+            <label for="reg-password">Password:</label>
+            <input type="password" id="reg-password" name="password" required>
+            <label for="reg-fn">First Name:</label>
+            <input type="text" id="reg-fn" name="fn" required>
+            <label for="reg-sn">Last Name:</label>
+            <input type="text" id="reg-sn" name="sn" required>
+            <button type="submit">Register</button>
+        </form>
+        <div id="register-response" class="response"></div>
     </div>
-    <div class="row">
-        <div class="column">
-            <form id="registerForm">
-                <h3>Register</h3>
-                <label for="email">Email</label>
-                <input type="text" id="email" name="email" placeholder="Your email..">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" placeholder="Your password..">
-                <label for="fn">First Name</label>
-                <input type="text" id="fn" name="fn" placeholder="Your first name..">
-                <label for="sn">Last Name</label>
-                <input type="text" id="sn" name="sn" placeholder="Your last name..">
-                <button type="submit">Register</button>
-            </form>
-        </div>
-        <div class="column">
-            <form id="loginForm">
-                <h3>Login</h3>
-                <label for="loginEmail">Email</label>
-                <input type="text" id="loginEmail" name="email" placeholder="Your email..">
-                <label for="loginPassword">Password</label>
-                <input type="password" id="loginPassword" name="password" placeholder="Your password..">
-                <button type="submit">Login</button>
-            </form>
-            <div style="margin-top: 20px;">
-                <button id="generateKeyBtn">Generate API Key</button>
-                <button id="listKeysBtn">List My Keys</button>
-                <div id="apiKeyOutput"></div>
-                <div id="keysList"></div>
-            </div>
-        </div>
+
+    <!-- Login Section -->
+    <div class="section">
+        <h3>Login</h3>
+        <form id="login-form">
+            <label for="login-email">Email:</label>
+            <input type="email" id="login-email" name="email" required>
+            <label for="login-password">Password:</label>
+            <input type="password" id="login-password" name="password" required>
+            <button type="submit">Login</button>
+        </form>
+        <div id="login-response" class="response"></div>
     </div>
-</div>
 
-<script>
-    // Register Form
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-            email: document.getElementById('email').value,
-            password: document.getElementById('password').value,
-            fn: document.getElementById('fn').value,
-            sn: document.getElementById('sn').value
-        };
-        const response = await fetch('/registerUser', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData)
-        });
-        const result = await response.json();
-        alert(result.success ? 'Registration successful!' : 'Error: ' + result.error);
-    });
+    <!-- API Key Generation Section -->
+    <div class="section">
+        <h3>Generate API Key</h3>
+        <button id="generate-api-key">Generate API Key</button>
+        <div id="apikey-response" class="response"></div>
+    </div>
 
-    // Login Form
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const formData = {
-            email: document.getElementById('loginEmail').value,
-            password: document.getElementById('loginPassword').value
-        };
-        const response = await fetch('/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-            credentials: 'include'
-        });
-        const result = await response.json();
-        alert(result.success ? 'Login successful!' : 'Error: ' + result.error);
-    });
+    <!-- Country Data Section -->
+    <div class="section">
+        <h3>Get Country Data</h3>
+        <form id="country-form">
+            <label for="country-name">Country Name:</label>
+            <input type="text" id="country-name" name="country" placeholder="e.g., France" required>
+            <label for="api-key">API Key:</label>
+            <input type="text" id="api-key" name="apiKey" placeholder="Paste your API key here" required>
+            <button type="submit">Get Country Data</button>
+        </form>
+        <div id="country-response" class="response"></div>
+        <div id="country-data"></div>
+    </div>
 
-    // Generate API Key
-    document.getElementById('generateKeyBtn').addEventListener('click', async () => {
-        const response = await fetch('/getapikey', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include'
-        });
-        const result = await response.json();
-        const output = document.getElementById('apiKeyOutput');
-        output.style.display = 'block';
-        output.textContent = result.success ? `Your API Key: ${result.data}` : `Error: ${result.error}`;
-    });
+    <script>
+        // Store session cookie (we'll use fetch, which automatically handles cookies)
+        let apiKey = '';
 
-    // List API Keys
-    document.getElementById('listKeysBtn').addEventListener('click', async () => {
-        const response = await fetch('/apikeys', {
-            method: 'GET',
-            credentials: 'include'
-        });
-        const result = await response.json();
-        const keysList = document.getElementById('keysList');
-        keysList.style.display = 'block';
-        if (result.success) {
-            keysList.innerHTML = '<h3>Your API Keys:</h3>' + result.data.map(key => 
-                `<p>Key: ${key.key} | Active: ${key.is_active} | Usage: ${key.usage_count} | <button onclick="revokeKey('${key.key}')">Revoke</button></p>`
-            ).join('');
-        } else {
-            keysList.textContent = `Error: ${result.error}`;
+        // Helper function to display responses
+        function displayResponse(elementId, message, isError = false) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.style.backgroundColor = isError ? '#f8d7da' : '#d4edda';
+            element.style.color = isError ? '#721c24' : '#155724';
+            element.textContent = message;
         }
-    });
 
-    // Revoke API Key
-    async function revokeKey(key) {
-        const response = await fetch('/revokeapikey', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key }),
-            credentials: 'include'
+        // Register Form Submission
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const fn = document.getElementById('reg-fn').value;
+            const sn = document.getElementById('reg-sn').value;
+
+            try {
+                const response = await fetch('/registerUser', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password, fn, sn })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    displayResponse('register-response', 'Registration successful! Please log in.');
+                } else {
+                    displayResponse('register-response', data.error || 'Registration failed.', true);
+                }
+            } catch (error) {
+                displayResponse('register-response', 'Error: ' + error.message, true);
+            }
         });
-        const result = await response.json();
-        alert(result.success ? 'Key revoked!' : 'Error: ' + result.error);
-        document.getElementById('listKeysBtn').click(); // Refresh list
-    }
-</script>
+
+        // Login Form Submission
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password }),
+                    credentials: 'include' // Include cookies for session
+                });
+                const data = await response.json();
+                if (data.success) {
+                    displayResponse('login-response', 'Login successful! You can now generate an API key.');
+                } else {
+                    displayResponse('login-response', data.error || 'Login failed.', true);
+                }
+            } catch (error) {
+                displayResponse('login-response', 'Error: ' + error.message, true);
+            }
+        });
+
+        // Generate API Key
+        document.getElementById('generate-api-key').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/getapikey', {
+                    method: 'POST',
+                    credentials: 'include' // Include cookies for session
+                });
+                const data = await response.json();
+                if (data.success) {
+                    apiKey = data.data;
+                    displayResponse('apikey-response', `API Key generated: ${apiKey}`);
+                    document.getElementById('api-key').value = apiKey; // Auto-fill API key field
+                } else {
+                    displayResponse('apikey-response', data.error || 'Failed to generate API key.', true);
+                }
+            } catch (error) {
+                displayResponse('apikey-response', 'Error: ' + error.message, true);
+            }
+        });
+
+        // Get Country Data
+        document.getElementById('country-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const country = document.getElementById('country-name').value;
+            const apiKey = document.getElementById('api-key').value;
+
+            try {
+                const response = await fetch(`/api/countries/${country}`, {
+                    headers: { 'X-API-Key': apiKey }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    const countryData = data.data;
+                    document.getElementById('country-data').innerHTML = `
+                        <h4>${countryData.name}</h4>
+                        <p><strong>Capital:</strong> ${countryData.capital}</p>
+                        <p><strong>Currencies:</strong> ${countryData.currencies.map(c => `${c.name} (${c.code})`).join(', ')}</p>
+                        <p><strong>Languages:</strong> ${countryData.languages.join(', ')}</p>
+                        <p><strong>Flag:</strong> <img src="${countryData.flag}" alt="${countryData.name} flag" width="100"></p>
+                    `;
+                    displayResponse('country-response', 'Country data retrieved successfully!');
+                } else {
+                    document.getElementById('country-data').innerHTML = '';
+                    displayResponse('country-response', data.error || 'Failed to retrieve country data.', true);
+                }
+            } catch (error) {
+                document.getElementById('country-data').innerHTML = '';
+                displayResponse('country-response', 'Error: ' + error.message, true);
+            }
+        });
+    </script>
 </body>
 </html>
