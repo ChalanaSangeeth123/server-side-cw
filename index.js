@@ -5,7 +5,17 @@ const APIKey = require('./Services/ApiKeyService');
 const countryRouter = require('./Routers/CountryRouter');
 const apikeyMiddleware = require('./Middleware/APIAuth/APIAuthMiddleWare');
 const checkSession = require('./Middleware/SessionAuth/SessionAuth');
+const path = require('path'); // Required for serving static files
 require('dotenv').config();
+
+// Debug: Log the SESSION_SECRET to verify it's loaded
+console.log('SESSION_SECRET:', process.env.SESSION_SECRET);
+
+// Ensure SESSION_SECRET is defined
+if (!process.env.SESSION_SECRET) {
+    console.error('Error: SESSION_SECRET is not defined in .env file');
+    process.exit(1);
+}
 
 const app = express();
 app.use(express.json());
@@ -14,11 +24,14 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false,
+        secure: false, // Set to true if using HTTPS
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000 // 1 day
     }
 }));
+
+// Serve static files from the React app (public/ folder)
+app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT_NUMBER = process.env.PORT || 5000;
 
@@ -46,13 +59,9 @@ app.post('/getapikey', checkSession, async (req, res) => {
     res.json(data);
 });
 
-// Serve HTML page (optional, can be used for vodcast demo)
-app.get('/aboutus', (req, res) => {
-    res.sendFile(__dirname + '/views/test.html');
-});
-
-app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/views/test.html');
+// Handle client-side routing by serving index.html for all non-API routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT_NUMBER, (err) => {
