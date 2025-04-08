@@ -1,9 +1,9 @@
-const createResponse = async (success, data = null, error = null) =>{
-    return{
+const createResponse = (success, data = null, error = null) => {
+    return {
         success,
         data,
-        error:error?.message | error
+        error: error?.message || error
     };
-}
+};
 
-module.exports = {createResponse}
+module.exports = { createResponse };
