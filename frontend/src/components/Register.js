@@ -12,8 +12,15 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post('http://localhost:5000/registerUser', formData);
-            setMessage(response.data.success ? 'Registration successful! Please log in.' : response.data.error);
+            const response = await axios.post('http://localhost:5000/registerUser', formData, { withCredentials: true });
+            if (response.data.success) {
+                setMessage('Registration successful! Redirecting to login...');
+                setTimeout(() => {
+                    window.location.href = '/login'; // Redirect to login
+                }, 1000);
+            } else {
+                setMessage(response.data.error || 'Registration failed.');
+            }
         } catch (error) {
             setMessage('Error: ' + error.message);
         }
@@ -21,19 +28,47 @@ const Register = () => {
 
     return (
         <div className="section">
-            <h3>Register</h3>
+            <h3>Register for TravelTales</h3>
             <form onSubmit={handleSubmit}>
                 <label>Email:</label>
-                <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+                <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="Enter your email"
+                    required
+                />
                 <label>Password:</label>
-                <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+                <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Create a password"
+                    required
+                />
                 <label>First Name:</label>
-                <input type="text" name="fn" value={formData.fn} onChange={handleChange} required />
+                <input
+                    type="text"
+                    name="fn"
+                    value={formData.fn}
+                    onChange={handleChange}
+                    placeholder="Enter your first name"
+                    required
+                />
                 <label>Last Name:</label>
-                <input type="text" name="sn" value={formData.sn} onChange={handleChange} required />
+                <input
+                    type="text"
+                    name="sn"
+                    value={formData.sn}
+                    onChange={handleChange}
+                    placeholder="Enter your last name"
+                    required
+                />
                 <button type="submit">Register</button>
             </form>
-            {message && <div className={message.includes('Error') ? 'error' : 'success'}>{message}</div>}
+            {message && <div className={message.includes('Error') || message.includes('failed') ? 'error' : 'success'}>{message}</div>}
         </div>
     );
 };
