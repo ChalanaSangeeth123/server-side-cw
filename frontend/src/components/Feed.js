@@ -8,12 +8,19 @@ const Feed = ({ user, setLoggedIn }) => {
     const fetchFeed = async () => {
         try {
             const response = await axios.get('http://localhost:5000/api/feed', { withCredentials: true });
-            const postsWithLikes = response.data.data.map(async post => {
-                const likeResponse = await axios.get(`http://localhost:5000/api/likes/likes?postId=${post.id}`, { withCredentials: true });
-                return { ...post, likes: likeResponse.data.data.likes, dislikes: likeResponse.data.data.dislikes };
-            });
-            const updatedPosts = await Promise.all(postsWithLikes);
-            setPosts(updatedPosts);
+            const postsWithLikes = await Promise.all(
+                response.data.data.map(async post => {
+                    const likeResponse = await axios.get(`http://localhost:5000/api/likes/likes?postId=${post.id}`, { withCredentials: true });
+                    const followResponse = await axios.get(`http://localhost:5000/api/is-following/${post.user_id}`, { withCredentials: true });
+                    return {
+                        ...post,
+                        likes: likeResponse.data.data?.likes || 0,
+                        dislikes: likeResponse.data.data?.dislikes || 0,
+                        isFollowing: followResponse.data.isFollowing
+                    };
+                })
+            );
+            setPosts(postsWithLikes);
             setError('');
         } catch (error) {
             if (error.response && error.response.status === 401) {
@@ -43,16 +50,20 @@ const Feed = ({ user, setLoggedIn }) => {
         }
     };
 
-    const handleFollow = async (userId) => {
+    const handleFollowToggle = async (userId, isFollowing) => {
         try {
-            await axios.delete('http://localhost:5000/api/unfollow', { data: { followingId: userId }, withCredentials: true });
+            if (isFollowing) {
+                await axios.delete(`http://localhost:5000/api/follow/${userId}`, { withCredentials: true });
+            } else {
+                await axios.post('http://localhost:5000/api/follow', { followingId: userId }, { withCredentials: true });
+            }
             await fetchFeed();
         } catch (error) {
             if (error.response && error.response.status === 401) {
                 setError('Session expired. Please log in again.');
                 setLoggedIn(false);
             } else {
-                setError('Error unfollowing user: ' + error.message);
+                setError('Error updating follow status: ' + error.message);
             }
         }
     };
@@ -67,7 +78,9 @@ const Feed = ({ user, setLoggedIn }) => {
                         key={post.id}
                         className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-auto border border-gray-200 hover:shadow-xl transition-all duration-300"
                     >
-                        <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-1">{post.title} by {post.username}</h4>
+                        <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-1">
+                            {post.title} by {(post.fn && post.sn) ? `${post.fn} ${post.sn}` : 'Anonymous'}
+                        </h4>
                         <p className="text-gray-600 mb-4 line-clamp-3">{post.content}</p>
                         <div className="flex flex-col space-y-2">
                             <p className="text-sm text-gray-500 font-medium">Country: {post.country}</p>
@@ -94,10 +107,10 @@ const Feed = ({ user, setLoggedIn }) => {
                                         Dislike
                                     </button>
                                     <button
-                                        onClick={() => handleFollow(post.user_id)}
-                                        className="text-sm text-gray-600 hover:text-gray-800"
+                                        onClick={() => handleFollowToggle(post.user_id, post.isFollowing)}
+                                        className={`text-sm px-2 py-1 rounded ${post.isFollowing ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
                                     >
-                                        Unfollow
+                                        {post.isFollowing ? 'Unfollow' : 'Follow'}
                                     </button>
                                 </div>
                             </div>
