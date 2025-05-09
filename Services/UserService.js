@@ -7,7 +7,6 @@ class UserService {
         this.userdao = new UserDAO();
     }
 
-    // Register new user
     async create(req) {
         try {
             const { email, password, fn, sn } = req.body;
@@ -25,11 +24,11 @@ class UserService {
         }
     }
 
-    // Authenticate user and create session
     async authenticate(req) {
         try {
             const { email, password } = req.body;
             const result = await this.userdao.getByEmail(email);
+            console.log('User fetched:', result.data);
             if (!result.data) {
                 return createResponse(false, null, 'User not found');
             }
@@ -37,16 +36,19 @@ class UserService {
             if (!isMatch) {
                 return createResponse(false, null, 'Invalid credentials');
             }
-            req.session.user = {
+            const user = {
                 id: result.data.id,
                 email: result.data.email,
-                name: result.data.fn
+                fn: result.data.fn,
+                sn: result.data.sn
             };
+            req.session.user = user;
             req.session.isAuthenticated = true;
-            return createResponse(true, 'Login successful');
+            console.log('Session set:', req.session);
+            return createResponse(true, { user }, 'Login successful');
         } catch (ex) {
-            console.error(ex);
-            return createResponse(false, null, ex);
+            console.error('Login error:', ex);
+            return createResponse(false, null, ex.message);
         }
     }
 }
