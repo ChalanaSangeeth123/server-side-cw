@@ -11,6 +11,7 @@ const apikeyMiddleware = require('./Middleware/APIAuth/APIAuthMiddleWare');
 const checkSession = require('./Middleware/SessionAuth/SessionAuth');
 const path = require('path');
 const axios = require('axios');
+const pool = require('./Database/SQLCon'); // Added for direct DB access
 require('dotenv').config();
 
 // Debug: Log the SESSION_SECRET to verify it's loaded
@@ -57,11 +58,11 @@ app.get('/api/countries/list', apikeyMiddleware, async (req, res) => {
 
 // Blog post routes
 const blogPostService = new BlogPostService();
-app.get('/api/posts', checkSession, async (req, res) => {
+app.get('/api/posts', async (req, res) => {
     const { country, username } = req.query;
     let result;
     if (country || username) {
-        result = await blogPostService.getAll(); // Fetch all posts first, then filter client-side for now
+        result = await blogPostService.getAll();
         if (result.success) {
             let posts = result.data;
             if (country) {
@@ -69,8 +70,8 @@ app.get('/api/posts', checkSession, async (req, res) => {
             }
             if (username) {
                 posts = posts.filter(post => {
-                    // Assuming username is fetched via a join in getAll, adjust if needed
-                    return post.username?.toLowerCase().includes(username.toLowerCase());
+                    const fullName = `${post.fn} ${post.sn}`.toLowerCase();
+                    return fullName.includes(username.toLowerCase());
                 });
             }
             res.json({ success: true, data: posts });
@@ -99,7 +100,7 @@ app.get('/api/posts/search', checkSession, async (req, res) => {
     if (!q || !type) {
         return res.status(400).json({ success: false, error: 'Query and type are required' });
     }
-    const result = await blogPostService.getAll(); // Placeholder, adjust if search is optimized
+    const result = await blogPostService.getAll();
     if (result.success) {
         let posts = result.data;
         if (type === 'country' || type === 'username') {
@@ -113,6 +114,112 @@ app.get('/api/posts/search', checkSession, async (req, res) => {
         res.json({ success: true, data: posts });
     } else {
         res.status(500).json(result);
+    }
+});
+
+// Feed route
+app.get('/api/feed', checkSession, async (req, res) => {
+    const userId = req.session.user.id;
+    try {
+        const rows = await new Promise((resolve, reject) => {
+            pool.all(
+                'SELECT bp.*, u.fn, u.sn FROM blog_posts bp JOIN users u ON bp.user_id = u.id ' +
+                'WHERE bp.user_id IN (SELECT following_id FROM follows WHERE follower_id = ?) ' +
+                'ORDER BY bp.created_at DESC',
+                [userId],
+                (err, rows) => (err ? reject(err) : resolve(rows))
+            );
+        });
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Follow routes
+app.get('/api/followers', checkSession, async (req, res) => {
+    const userId = req.session.user.id;
+    try {
+        const rows = await new Promise((resolve, reject) => {
+            pool.all(
+                'SELECT u.id, u.fn, u.sn FROM follows f JOIN users u ON f.follower_id = u.id WHERE f.following_id = ?',
+                [userId],
+                (err, rows) => (err ? reject(err) : resolve(rows))
+            );
+        });
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/following', checkSession, async (req, res) => {
+    const userId = req.session.user.id;
+    try {
+        const rows = await new Promise((resolve, reject) => {
+            pool.all(
+                'SELECT u.id, u.fn, u.sn FROM follows f JOIN users u ON f.following_id = u.id WHERE f.follower_id = ?',
+                [userId],
+                (err, rows) => (err ? reject(err) : resolve(rows))
+            );
+        });
+        res.json({ success: true, data: rows });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/is-following/:userId', checkSession, async (req, res) => {
+    const userId = req.session.user.id;
+    const targetUserId = req.params.userId;
+    try {
+        const row = await new Promise((resolve, reject) => {
+            pool.get(
+                'SELECT 1 FROM follows WHERE follower_id = ? AND following_id = ?',
+                [userId, targetUserId],
+                (err, row) => (err ? reject(err) : resolve(row))
+            );
+        });
+        res.json({ success: true, isFollowing: !!row });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.post('/api/follow', checkSession, async (req, res) => {
+    const userId = req.session.user.id;
+    const { followingId } = req.body;
+    if (userId === followingId) {
+        return res.status(400).json({ success: false, error: 'Cannot follow yourself' });
+    }
+    try {
+        await new Promise((resolve, reject) => {
+            pool.run(
+                'INSERT OR IGNORE INTO follows (follower_id, following_id) VALUES (?, ?)',
+                [userId, followingId],
+                (err) => (err ? reject(err) : resolve())
+            );
+        });
+        res.json({ success: true, message: 'Followed successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.delete('/api/follow/:userId', checkSession, async (req, res) => {
+    const userId = req.session.user.id;
+    const followingId = req.params.userId;
+    try {
+        await new Promise((resolve, reject) => {
+            pool.run(
+                'DELETE FROM follows WHERE follower_id = ? AND following_id = ?',
+                [userId, followingId],
+                (err) => (err ? reject(err) : resolve())
+            );
+        });
+        res.json({ success: true, message: 'Unfollowed successfully' });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
