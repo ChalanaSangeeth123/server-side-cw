@@ -3,9 +3,14 @@ const session = require('express-session');
 const UserService = require('./Services/UserService');
 const APIKey = require('./Services/ApiKeyService');
 const countryRouter = require('./Routers/CountryRouter');
+const authRoutes = require('./Routers/uthRoutes'); // New for CW2
+const blogRoutes = require('./Routers/blogRoutes'); // New for CW2
+const socialRoutes = require('./Routers/socialRoutes'); // New for CW2
+const searchRoutes = require('./Routers/searchRoutes'); // New for CW2
 const apikeyMiddleware = require('./Middleware/APIAuth/APIAuthMiddleWare');
 const checkSession = require('./Middleware/SessionAuth/SessionAuth');
-const path = require('path'); // Required for serving static files
+const path = require('path');
+const cors = require('cors'); // Add CORS
 require('dotenv').config();
 
 // Debug: Log the SESSION_SECRET to verify it's loaded
@@ -18,7 +23,15 @@ if (!process.env.SESSION_SECRET) {
 }
 
 const app = express();
+
+// Enable CORS for React frontend
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+
+// Parse JSON and URL-encoded bodies
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Session middleware
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -33,36 +46,30 @@ app.use(session({
 // Serve static files from the React app (public/ folder)
 app.use(express.static(path.join(__dirname, 'public')));
 
-const PORT_NUMBER = process.env.PORT || 5000;
+// Apply session middleware (updated checkSession will handle public routes)
+app.use(checkSession);
 
-// API routes with key authentication
+// API routes with key authentication (from CW1)
 app.use('/api/countries', apikeyMiddleware, countryRouter);
 
-// User registration
-app.post('/registerUser', async (req, res) => {
-    const userService = new UserService();
-    const result = await userService.create(req);
-    res.json(result);
-});
+// New CW2 routes
+app.use('/api/auth', authRoutes);     // User authentication (refactor existing routes)
+app.use('/api/blog', blogRoutes);     // Blog post management
+app.use('/api/social', socialRoutes); // Likes, follows
+app.use('/api/search', searchRoutes); // Search functionality
 
-// User login
-app.post('/login', async (req, res) => {
-    const userService = new UserService();
-    const result = await userService.authenticate(req);
-    res.json(result);
-});
-
-// Generate API key (requires session)
-app.post('/getapikey', checkSession, async (req, res) => {
-    const apikeyservice = new APIKey();
-    const data = await apikeyservice.create(req);
-    res.json(data);
+// Global error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ error: 'Something went wrong!' });
 });
 
 // Handle client-side routing by serving index.html for all non-API routes
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+const PORT_NUMBER = process.env.PORT || 5000;
 
 app.listen(PORT_NUMBER, (err) => {
     if (err) {
