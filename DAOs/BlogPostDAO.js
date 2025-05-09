@@ -24,10 +24,14 @@ class BlogPostDAO {
 
     async getAll() {
         return new Promise((resolve, reject) => {
-            pool.all('SELECT * FROM blog_posts ORDER BY created_at DESC', [], (err, rows) => {
-                if (err) reject(err);
-                resolve(createResponse(true, rows));
-            });
+            pool.all(
+                'SELECT bp.*, u.fn, u.sn FROM blog_posts bp JOIN users u ON bp.user_id = u.id ORDER BY bp.created_at DESC',
+                [],
+                (err, rows) => {
+                    if (err) reject(err);
+                    resolve(createResponse(true, rows));
+                }
+            );
         });
     }
 
@@ -73,17 +77,17 @@ class BlogPostDAO {
     }
 
     async search(query, type) {
-        let sql = 'SELECT * FROM blog_posts WHERE 1=1';
+        let sql = 'SELECT bp.*, u.fn, u.sn FROM blog_posts bp JOIN users u ON bp.user_id = u.id WHERE 1=1';
         const params = [];
         if (type === 'country') {
-            sql += ' AND country LIKE ?';
+            sql += ' AND bp.country LIKE ?';
             params.push(`%${query}%`);
         } else if (type === 'username') {
-            sql += ' AND user_id IN (SELECT id FROM users WHERE fn LIKE ?)';
-            params.push(`%${query}%`);
+            sql += ' AND u.fn LIKE ? OR u.sn LIKE ?';
+            params.push(`%${query}%`, `%${query}%`);
         }
         return new Promise((resolve, reject) => {
-            pool.all(sql + ' ORDER BY created_at DESC', params, (err, rows) => {
+            pool.all(sql + ' ORDER BY bp.created_at DESC', params, (err, rows) => {
                 if (err) reject(err);
                 resolve(createResponse(true, rows));
             });
