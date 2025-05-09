@@ -30,7 +30,6 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
                 FOREIGN KEY (owner) REFERENCES users(id)
             )
         `);
-
         // Create blog_posts table for storing blog posts
         pool.run(`
             CREATE TABLE IF NOT EXISTS blog_posts (
