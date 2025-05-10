@@ -6,7 +6,7 @@ const Home = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
     const [loggedIn, setLoggedIn] = useState(false);
-    const [following, setFollowing] = useState({}); // Track follow status for each user
+    const [following, setFollowing] = useState({});
 
     useEffect(() => {
         const checkSession = async () => {
@@ -53,7 +53,6 @@ const Home = () => {
                     );
                     setPosts(postsWithLikes);
                     setError('');
-                    // Update following state
                     const followState = {};
                     postsWithLikes.forEach(post => {
                         followState[post.user_id] = post.isFollowing;
@@ -96,6 +95,46 @@ const Home = () => {
         }
     };
 
+    const handleLike = async (postId, type) => {
+        if (!loggedIn) {
+            setError('Please log in to like or dislike posts.');
+            return;
+        }
+        try {
+            await axios.post('http://localhost:5000/api/likes/like', { postId, type }, { withCredentials: true });
+            const response = await axios.get('http://localhost:5000/api/posts', { withCredentials: true });
+            if (response.data.success) {
+                const postsWithLikes = await Promise.all(
+                    response.data.data.map(async post => {
+                        try {
+                            const likeResponse = await axios.get(
+                                `http://localhost:5000/api/likes/likes?postId=${post.id}`,
+                                { withCredentials: true }
+                            );
+                            const followResponse = await axios.get(
+                                `http://localhost:5000/api/is-following/${post.user_id}`,
+                                { withCredentials: true }
+                            );
+                            return {
+                                ...post,
+                                likes: likeResponse.data.data?.likes || 0,
+                                dislikes: likeResponse.data.data?.dislikes || 0,
+                                isFollowing: followResponse.data.isFollowing
+                            };
+                        } catch (likeError) {
+                            console.error('Error fetching likes or follow status for post:', post.id, likeError);
+                            return { ...post, likes: 0, dislikes: 0, isFollowing: false };
+                        }
+                    })
+                );
+                setPosts(postsWithLikes);
+                setError('');
+            }
+        } catch (error) {
+            setError('Error liking/disliking post: ' + (error.response?.data?.error || error.message));
+        }
+    };
+
     return (
         <div className="max-w-3xl mx-auto p-6 bg-gray-100 min-h-screen">
             <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">Recent Posts</h3>
@@ -132,6 +171,22 @@ const Home = () => {
                                         <span className="mr-1">👎</span> {post.dislikes}
                                     </span>
                                 </div>
+                                {loggedIn && (
+                                    <div className="flex space-x-2">
+                                        <button
+                                            onClick={() => handleLike(post.id, 'like')}
+                                            className="text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
+                                        >
+                                            Like
+                                        </button>
+                                        <button
+                                            onClick={() => handleLike(post.id, 'dislike')}
+                                            className="text-sm text-red-600 hover:text-red-800 px-2 py-1 rounded"
+                                        >
+                                            Dislike
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
