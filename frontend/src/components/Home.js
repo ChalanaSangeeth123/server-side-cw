@@ -10,6 +10,7 @@ const Home = () => {
     const [editingPostId, setEditingPostId] = useState(null);
     const [editFormData, setEditFormData] = useState({ title: '', content: '', country: '', dateOfVisit: '' });
     const [user, setUser] = useState(null);
+    const [sortOption, setSortOption] = useState('newest'); // Default sort by newest
 
     useEffect(() => {
         const checkSession = async () => {
@@ -56,10 +57,12 @@ const Home = () => {
                             }
                         })
                     );
-                    setPosts(postsWithLikes);
+                    // Sort posts based on sortOption
+                    const sortedPosts = sortPosts(postsWithLikes, sortOption);
+                    setPosts(sortedPosts);
                     setError('');
                     const followState = {};
-                    postsWithLikes.forEach(post => {
+                    sortedPosts.forEach(post => {
                         followState[post.user_id] = post.isFollowing;
                     });
                     setFollowing(followState);
@@ -74,7 +77,30 @@ const Home = () => {
         };
 
         checkSession().then(fetchPosts);
-    }, [loggedIn]);
+    }, [loggedIn, sortOption]); // Re-fetch or re-sort when sortOption changes
+
+    const sortPosts = (posts, option) => {
+        const sorted = [...posts]; // Create a copy to avoid mutating state
+        if (option === 'newest') {
+            return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        } else if (option === 'most-liked') {
+            return sorted.sort((a, b) => b.likes - a.likes);
+        } else if (option === 'most-commented') {
+            // Placeholder: No comments data available
+            // If comments are added, sort by comment count
+            // For now, return unsorted or sort by likes as a fallback
+            console.warn('Sorting by most-commented is not supported yet.');
+            return sorted; // or sorted.sort((a, b) => b.comments - a.comments) if comments exist
+        }
+        return sorted;
+    };
+
+    const handleSortChange = (e) => {
+        const newSortOption = e.target.value;
+        setSortOption(newSortOption);
+        // Sort existing posts immediately
+        setPosts(prevPosts => sortPosts(prevPosts, newSortOption));
+    };
 
     const handleFollow = async (userId) => {
         try {
@@ -132,7 +158,7 @@ const Home = () => {
                         }
                     })
                 );
-                setPosts(postsWithLikes);
+                setPosts(sortPosts(postsWithLikes, sortOption)); // Maintain sort order after like
                 setError('');
             }
         } catch (error) {
@@ -201,6 +227,19 @@ const Home = () => {
     return (
         <div className="max-w-3xl mx-auto p-6 bg-gray-100 min-h-screen">
             <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">Recent Posts</h3>
+            <div className="mb-6 flex justify-end">
+                <label htmlFor="sort" className="mr-2 text-gray-700 font-medium">Sort by:</label>
+                <select
+                    id="sort"
+                    value={sortOption}
+                    onChange={handleSortChange}
+                    className="border p-2 rounded bg-white text-gray-700"
+                >
+                    <option value="newest">Newest</option>
+                    <option value="most-liked">Most Liked</option>
+                    <option value="most-commented">Most Commented</option>
+                </select>
+            </div>
             {loading && <div className="text-center">Loading...</div>}
             {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
             <div className="grid grid-cols-1 gap-6">
