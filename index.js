@@ -95,6 +95,22 @@ app.post('/api/posts', checkSession, async (req, res) => {
         res.status(400).json(result);
     }
 });
+app.put('/api/posts', checkSession, async (req, res) => {
+    const result = await blogPostService.update(req);
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(result.error === 'Post not found or not authorized' ? 403 : 400).json(result);
+    }
+});
+app.delete('/api/posts', checkSession, async (req, res) => {
+    const result = await blogPostService.delete(req);
+    if (result.success) {
+        res.json(result);
+    } else {
+        res.status(result.error === 'Post not found or not authorized' ? 403 : 400).json(result);
+    }
+});
 app.get('/api/posts/search', checkSession, async (req, res) => {
     const { q, type } = req.query;
     if (!q || !type) {
