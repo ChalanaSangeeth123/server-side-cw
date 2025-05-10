@@ -7,6 +7,9 @@ const Home = () => {
     const [loading, setLoading] = useState(true);
     const [loggedIn, setLoggedIn] = useState(false);
     const [following, setFollowing] = useState({});
+    const [editingPostId, setEditingPostId] = useState(null);
+    const [editFormData, setEditFormData] = useState({ title: '', content: '', country: '', dateOfVisit: '' });
+    const [user, setUser] = useState(null);
 
     useEffect(() => {
         const checkSession = async () => {
@@ -14,9 +17,11 @@ const Home = () => {
                 const response = await axios.get('http://localhost:5000/check-session', { withCredentials: true });
                 if (response.data.success) {
                     setLoggedIn(true);
+                    setUser(response.data.user);
                 }
             } catch (error) {
                 setLoggedIn(false);
+                setUser(null);
             }
         };
 
@@ -135,6 +140,64 @@ const Home = () => {
         }
     };
 
+    const handleEditStart = (post) => {
+        setEditingPostId(post.id);
+        setEditFormData({
+            title: post.title,
+            content: post.content,
+            country: post.country,
+            dateOfVisit: post.date_of_visit || ''
+        });
+    };
+
+    const handleEditChange = (e) => {
+        setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+    };
+
+    const handleEditSubmit = async (postId) => {
+        try {
+            const response = await axios.put('http://localhost:5000/api/posts', {
+                id: postId,
+                ...editFormData
+            }, { withCredentials: true });
+            if (response.data.success) {
+                setPosts(posts.map(post =>
+                    post.id === postId ? { ...post, ...editFormData, date_of_visit: editFormData.dateOfVisit } : post
+                ));
+                setEditingPostId(null);
+                setEditFormData({ title: '', content: '', country: '', dateOfVisit: '' });
+                setError('');
+            } else {
+                setError(response.data.error || 'Failed to update post.');
+            }
+        } catch (error) {
+            setError('Error updating post: ' + (error.response?.data?.error || error.message));
+        }
+    };
+
+    const handleEditCancel = () => {
+        setEditingPostId(null);
+        setEditFormData({ title: '', content: '', country: '', dateOfVisit: '' });
+    };
+
+    const handleDelete = async (postId) => {
+        if (!window.confirm('Are you sure you want to delete this post?')) return;
+        try {
+            const response = await axios.delete('http://localhost:5000/api/posts', {
+                data: { id: postId },
+                withCredentials: true
+            });
+            if (response.data.success) {
+                setPosts(posts.filter(post => post.id !== postId));
+                setError('');
+            } else {
+                setError(response.data.error || 'Failed to delete post.');
+            }
+        } catch (error) {
+            setError('Error deleting post: ' + (error.response?.data?.error || error.message));
+        }
+    };
+
     return (
         <div className="max-w-3xl mx-auto p-6 bg-gray-100 min-h-screen">
             <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">Recent Posts</h3>
@@ -146,49 +209,123 @@ const Home = () => {
                         key={post.id}
                         className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-auto border border-gray-200 hover:shadow-xl transition-all duration-300"
                     >
-                        <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-1">{post.title}</h4>
-                        <p className="text-gray-600 mb-2 line-clamp-3">{post.content}</p>
-                        <div className="flex flex-col space-y-2">
-                            <p className="text-sm text-gray-500 font-medium">Country: {post.country}</p>
-                            <p className="text-sm text-gray-500 font-medium">Date of Visit: {post.date_of_visit || 'N/A'}</p>
-                            <p className="text-sm text-gray-500 font-medium">
-                                Author: {(post.fn && post.sn) ? `${post.fn} ${post.sn}` : 'Anonymous'}
-                                {loggedIn && (
+                        {editingPostId === post.id ? (
+                            <div className="flex flex-col space-y-4">
+                                <input
+                                    type="text"
+                                    name="title"
+                                    value={editFormData.title}
+                                    onChange={handleEditChange}
+                                    placeholder="Post Title"
+                                    className="border p-2 rounded"
+                                    required
+                                />
+                                <textarea
+                                    name="content"
+                                    value={editFormData.content}
+                                    onChange={handleEditChange}
+                                    placeholder="Post Content"
+                                    className="border p-2 rounded"
+                                    rows="4"
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    name="country"
+                                    value={editFormData.country}
+                                    onChange={handleEditChange}
+                                    placeholder="Country"
+                                    className="border p-2 rounded"
+                                    required
+                                />
+                                <input
+                                    type="date"
+                                    name="dateOfVisit"
+                                    value={editFormData.dateOfVisit}
+                                    onChange={handleEditChange}
+                                    className="border p-2 rounded"
+                                    required
+                                />
+                                <div className="flex space-x-2">
                                     <button
-                                        onClick={() => post.isFollowing ? handleUnfollow(post.user_id) : handleFollow(post.user_id)}
-                                        className={`ml-2 text-sm px-2 py-1 rounded ${post.isFollowing ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                        onClick={() => handleEditSubmit(post.id)}
+                                        className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700"
                                     >
-                                        {post.isFollowing ? 'Unfollow' : 'Follow'}
+                                        Save
                                     </button>
-                                )}
-                            </p>
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                                <div className="flex items-center space-x-3">
-                                    <span className="flex items-center text-sm text-gray-700">
-                                        <span className="mr-1">👍</span> {post.likes}
-                                    </span>
-                                    <span className="flex items-center text-sm text-gray-700">
-                                        <span className="mr-1">👎</span> {post.dislikes}
-                                    </span>
+                                    <button
+                                        onClick={handleEditCancel}
+                                        className="bg-gray-600 text-white p-2 rounded hover:bg-gray-700"
+                                    >
+                                        Cancel
+                                    </button>
                                 </div>
-                                {loggedIn && (
-                                    <div className="flex space-x-2">
-                                        <button
-                                            onClick={() => handleLike(post.id, 'like')}
-                                            className="text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
-                                        >
-                                            Like
-                                        </button>
-                                        <button
-                                            onClick={() => handleLike(post.id, 'dislike')}
-                                            className="text-sm text-red-600 hover:text-red-800 px-2 py-1 rounded"
-                                        >
-                                            Dislike
-                                        </button>
-                                    </div>
-                                )}
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-1">{post.title}</h4>
+                                <p className="text-gray-600 mb-2 line-clamp-3">{post.content}</p>
+                                <div className="flex flex-col space-y-2">
+                                    <p className="text-sm text-gray-500 font-medium">Country: {post.country}</p>
+                                    <p className="text-sm text-gray-500 font-medium">Date of Visit: {post.date_of_visit || 'N/A'}</p>
+                                    <p className="text-sm text-gray-500 font-medium">
+                                        Author: {(post.fn && post.sn) ? `${post.fn} ${post.sn}` : 'Anonymous'}
+                                        {loggedIn && (
+                                            <button
+                                                onClick={() => post.isFollowing ? handleUnfollow(post.user_id) : handleFollow(post.user_id)}
+                                                className={`ml-2 text-sm px-2 py-1 rounded ${post.isFollowing ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                            >
+                                                {post.isFollowing ? 'Unfollow' : 'Follow'}
+                                            </button>
+                                        )}
+                                    </p>
+                                    <div className="flex items-center justify-between pt-2 border-t border-gray-200">
+                                        <div className="flex items-center space-x-3">
+                                            <span className="flex items-center text-sm text-gray-700">
+                                                <span className="mr-1">👍</span> {post.likes}
+                                            </span>
+                                            <span className="flex items-center text-sm text-gray-700">
+                                                <span className="mr-1">👎</span> {post.dislikes}
+                                            </span>
+                                        </div>
+                                        <div className="flex space-x-2">
+                                            {loggedIn && (
+                                                <>
+                                                    <button
+                                                        onClick={() => handleLike(post.id, 'like')}
+                                                        className="text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
+                                                    >
+                                                        Like
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleLike(post.id, 'dislike')}
+                                                        className="text-sm text-red-600 hover:text-red-800 px-2 py-1 rounded"
+                                                    >
+                                                        Dislike
+                                                    </button>
+                                                    {user && user.id === post.user_id && (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleEditStart(post)}
+                                                                className="text-sm text-green-600 hover:text-green-800 px-2 py-1 rounded"
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDelete(post.id)}
+                                                                className="text-sm text-red-600 hover:text-red-800 px-2 py-1 rounded"
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 ))}
             </div>
