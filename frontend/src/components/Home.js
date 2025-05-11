@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './styles.css'; 
 
 const Home = () => {
     const [posts, setPosts] = useState([]);
@@ -57,7 +58,6 @@ const Home = () => {
                             }
                         })
                     );
-                    // Sort posts based on sortOption
                     const sortedPosts = sortPosts(postsWithLikes, sortOption);
                     setPosts(sortedPosts);
                     setError('');
@@ -77,20 +77,17 @@ const Home = () => {
         };
 
         checkSession().then(fetchPosts);
-    }, [loggedIn, sortOption]); // Re-fetch or re-sort when sortOption changes
+    }, [loggedIn, sortOption]);
 
     const sortPosts = (posts, option) => {
-        const sorted = [...posts]; // Create a copy to avoid mutating state
+        const sorted = [...posts];
         if (option === 'newest') {
             return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
         } else if (option === 'most-liked') {
             return sorted.sort((a, b) => b.likes - a.likes);
         } else if (option === 'most-commented') {
-            // Placeholder: No comments data available
-            // If comments are added, sort by comment count
-            // For now, return unsorted or sort by likes as a fallback
             console.warn('Sorting by most-commented is not supported yet.');
-            return sorted; // or sorted.sort((a, b) => b.comments - a.comments) if comments exist
+            return sorted;
         }
         return sorted;
     };
@@ -98,7 +95,6 @@ const Home = () => {
     const handleSortChange = (e) => {
         const newSortOption = e.target.value;
         setSortOption(newSortOption);
-        // Sort existing posts immediately
         setPosts(prevPosts => sortPosts(prevPosts, newSortOption));
     };
 
@@ -158,7 +154,7 @@ const Home = () => {
                         }
                     })
                 );
-                setPosts(sortPosts(postsWithLikes, sortOption)); // Maintain sort order after like
+                setPosts(sortPosts(postsWithLikes, sortOption));
                 setError('');
             }
         } catch (error) {
@@ -225,31 +221,30 @@ const Home = () => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-6 bg-gray-100 min-h-screen">
-            <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">Recent Posts</h3>
-            <div className="mb-6 flex justify-end">
-                <label htmlFor="sort" className="mr-2 text-gray-700 font-medium">Sort by:</label>
+<div className="max-w-3xl mx-auto p-6 bg-gray-100 min-h-screen">
+        <div className="header-container flex justify-between items-center mb-6">
+            <span className="header-text text-2xl font-semibold">Recent Posts</span>
+            <div className="sort-container flex items-center">
+                <label htmlFor="sort" className="sort-label mr-2 text-gray-700">Sort by:</label>
                 <select
                     id="sort"
                     value={sortOption}
                     onChange={handleSortChange}
-                    className="border p-2 rounded bg-white text-gray-700"
+                    className="sort-select border p-2 rounded text-gray-900"
                 >
                     <option value="newest">Newest</option>
                     <option value="most-liked">Most Liked</option>
                     <option value="most-commented">Most Commented</option>
                 </select>
             </div>
-            {loading && <div className="text-center">Loading...</div>}
-            {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
-            <div className="grid grid-cols-1 gap-6">
-                {posts.map(post => (
-                    <div
-                        key={post.id}
-                        className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-auto border border-gray-200 hover:shadow-xl transition-all duration-300"
-                    >
+        </div>
+        {loading && <div className="loading text-center">Loading...</div>}
+        {error && <div className="error text-red-500 mb-4 text-center">{error}</div>}
+        <div className="grid grid-cols-1 gap-6">
+            {posts.map(post => (
+                    <div key={post.id} className="post-card">
                         {editingPostId === post.id ? (
-                            <div className="flex flex-col space-y-4">
+                            <div className="edit-form flex flex-col space-y-4">
                                 <input
                                     type="text"
                                     name="title"
@@ -302,66 +297,62 @@ const Home = () => {
                             </div>
                         ) : (
                             <>
-                                <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-1">{post.title}</h4>
-                                <p className="text-gray-600 mb-2 line-clamp-3">{post.content}</p>
-                                <div className="flex flex-col space-y-2">
-                                    <p className="text-sm text-gray-500 font-medium">Country: {post.country}</p>
-                                    <p className="text-sm text-gray-500 font-medium">Date of Visit: {post.date_of_visit || 'N/A'}</p>
-                                    <p className="text-sm text-gray-500 font-medium">
+                                <h4>{post.title}</h4>
+                                <p>{post.content}</p>
+                                <div className="metadata">
+                                    <p className="country">Country: {post.country}</p>
+                                    <p className="date">Date of Visit: {post.date_of_visit || 'N/A'}</p>
+                                </div>
+                                <div className="author">
+                                    <p>
                                         Author: {(post.fn && post.sn) ? `${post.fn} ${post.sn}` : 'Anonymous'}
                                         {loggedIn && (
                                             <button
-                                                onClick={() => post.isFollowing ? handleUnfollow(post.user_id) : handleFollow(post.user_id)}
-                                                className={`ml-2 text-sm px-2 py-1 rounded ${post.isFollowing ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+                                                onClick={() => (post.isFollowing ? handleUnfollow(post.user_id) : handleFollow(post.user_id))}
+                                                className={`follow-btn ml-2 ${post.isFollowing ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white px-2 py-1 rounded text-sm`}
                                             >
                                                 {post.isFollowing ? 'Unfollow' : 'Follow'}
                                             </button>
                                         )}
                                     </p>
-                                    <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                                        <div className="flex items-center space-x-3">
-                                            <span className="flex items-center text-sm text-gray-700">
-                                                <span className="mr-1">👍</span> {post.likes}
-                                            </span>
-                                            <span className="flex items-center text-sm text-gray-700">
-                                                <span className="mr-1">👎</span> {post.dislikes}
-                                            </span>
-                                        </div>
-                                        <div className="flex space-x-2">
-                                            {loggedIn && (
+                                </div>
+                                <div className="like-dislike-display">
+                                    <span className="like">👍 {post.likes}</span>
+                                    <span className="dislike">👎 {post.dislikes}</span>
+                                </div>
+                                <div className="action-buttons">
+                                    {loggedIn && (
+                                        <>
+                                            <button
+                                                onClick={() => handleLike(post.id, 'like')}
+                                                className="like-btn"
+                                            >
+                                                Like
+                                            </button>
+                                            <button
+                                                onClick={() => handleLike(post.id, 'dislike')}
+                                                className="dislike-btn"
+                                            >
+                                                Dislike
+                                            </button>
+                                            {user && user.id === post.user_id && (
                                                 <>
                                                     <button
-                                                        onClick={() => handleLike(post.id, 'like')}
-                                                        className="text-sm text-blue-600 hover:text-blue-800 px-2 py-1 rounded"
+                                                        onClick={() => handleEditStart(post)}
+                                                        className="edit-btn"
                                                     >
-                                                        Like
+                                                        Edit
                                                     </button>
                                                     <button
-                                                        onClick={() => handleLike(post.id, 'dislike')}
-                                                        className="text-sm text-red-600 hover:text-red-800 px-2 py-1 rounded"
+                                                        onClick={() => handleDelete(post.id)}
+                                                        className="delete-btn"
                                                     >
-                                                        Dislike
+                                                        Delete
                                                     </button>
-                                                    {user && user.id === post.user_id && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleEditStart(post)}
-                                                                className="text-sm text-green-600 hover:text-green-800 px-2 py-1 rounded"
-                                                            >
-                                                                Edit
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleDelete(post.id)}
-                                                                className="text-sm text-red-600 hover:text-red-800 px-2 py-1 rounded"
-                                                            >
-                                                                Delete
-                                                            </button>
-                                                        </>
-                                                    )}
                                                 </>
                                             )}
-                                        </div>
-                                    </div>
+                                        </>
+                                    )}
                                 </div>
                             </>
                         )}

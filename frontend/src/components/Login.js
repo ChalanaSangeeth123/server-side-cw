@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import './styles.css'; 
 
 const Login = ({ setLoggedIn, setUser, checkSession }) => {
     const [formData, setFormData] = useState({ email: '', password: '' });
@@ -20,7 +21,7 @@ const Login = ({ setLoggedIn, setUser, checkSession }) => {
                 setUser({ id: response.data.data.user.id, fn: response.data.data.user.fn, sn: response.data.data.user.sn });
                 setMessage('Login successful! Redirecting to feed...');
                 if (checkSession) {
-                    await checkSession(); // Re-check session to update App.js state
+                    await checkSession();
                 }
                 navigate('/feed');
             } else {
@@ -39,18 +40,20 @@ const Login = ({ setLoggedIn, setUser, checkSession }) => {
         <div className="section">
             <h3>Login to TravelTales</h3>
             <form onSubmit={handleSubmit}>
-                <label>Email:</label>
+                <label htmlFor="email">Email:</label>
                 <input
                     type="email"
+                    id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email"
                     required
                 />
-                <label>Password:</label>
+                <label htmlFor="password">Password:</label>
                 <input
                     type="password"
+                    id="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}

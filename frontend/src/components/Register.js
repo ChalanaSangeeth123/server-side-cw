@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './styles.css'; 
 
 const Register = () => {
     const [formData, setFormData] = useState({ email: '', password: '', fn: '', sn: '' });
@@ -16,7 +17,7 @@ const Register = () => {
             if (response.data.success) {
                 setMessage('Registration successful! Redirecting to login...');
                 setTimeout(() => {
-                    window.location.href = '/login'; // Redirect to login
+                    window.location.href = '/login';
                 }, 1000);
             } else {
                 setMessage(response.data.error || 'Registration failed.');
@@ -30,36 +31,40 @@ const Register = () => {
         <div className="section">
             <h3>Register for TravelTales</h3>
             <form onSubmit={handleSubmit}>
-                <label>Email:</label>
+                <label htmlFor="email">Email:</label>
                 <input
                     type="email"
+                    id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="Enter your email"
                     required
                 />
-                <label>Password:</label>
+                <label htmlFor="password">Password:</label>
                 <input
                     type="password"
+                    id="password"
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="Create a password"
                     required
                 />
-                <label>First Name:</label>
+                <label htmlFor="fn">First Name:</label>
                 <input
                     type="text"
+                    id="fn"
                     name="fn"
                     value={formData.fn}
                     onChange={handleChange}
                     placeholder="Enter your first name"
                     required
                 />
-                <label>Last Name:</label>
+                <label htmlFor="sn">Last Name:</label>
                 <input
                     type="text"
+                    id="sn"
                     name="sn"
                     value={formData.sn}
                     onChange={handleChange}

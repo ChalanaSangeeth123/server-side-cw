@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './styles.css'; 
 
 const PostForm = ({ post: initialPost, onSave }) => {
     const [post, setPost] = useState(initialPost || { title: '', content: '', country: '', date: new Date().toISOString().split('T')[0] });
@@ -36,20 +37,49 @@ const PostForm = ({ post: initialPost, onSave }) => {
         <div className="section">
             <h3>{post.id ? 'Edit Post' : 'Create Post'}</h3>
             <form onSubmit={handleSubmit}>
-                <label>Title:</label>
-                <input type="text" value={post.title} onChange={(e) => setPost({ ...post, title: e.target.value })} required />
-                <label>Content:</label>
-                <textarea value={post.content} onChange={(e) => setPost({ ...post, content: e.target.value })} required />
-                <label>Country:</label>
-                <input type="text" value={post.country} onChange={(e) => setPost({ ...post, country: e.target.value })} required />
-                <label>Date:</label>
-                <input type="date" value={post.date} onChange={(e) => setPost({ ...post, date: e.target.value })} required />
-                <button type="submit">{post.id ? 'Update' : 'Create'}</button>
-                {post.id && <button type="button" onClick={handleDelete}>Delete</button>}
+                <label htmlFor="title">Title:</label>
+                <input
+                    type="text"
+                    id="title"
+                    value={post.title}
+                    onChange={(e) => setPost({ ...post, title: e.target.value })}
+                    required
+                />
+                <label htmlFor="content">Content:</label>
+                <textarea
+                    id="content"
+                    value={post.content}
+                    onChange={(e) => setPost({ ...post, content: e.target.value })}
+                    required
+                />
+                <label htmlFor="country">Country:</label>
+                <input
+                    type="text"
+                    id="country"
+                    value={post.country}
+                    onChange={(e) => setPost({ ...post, country: e.target.value })}
+                    required
+                />
+                <label htmlFor="date">Date:</label>
+                <input
+                    type="date"
+                    id="date"
+                    value={post.date}
+                    onChange={(e) => setPost({ ...post, date: e.target.value })}
+                    required
+                />
+                <div className="action-buttons">
+                    <button type="submit">{post.id ? 'Update' : 'Create'}</button>
+                    {post.id && (
+                        <button type="button" onClick={handleDelete} className="delete-btn">
+                            Delete
+                        </button>
+                    )}
+                </div>
             </form>
             {message && <div className={message.includes('Error') ? 'error' : 'success'}>{message}</div>}
         </div>
     );
-  };
+};
 
-  export default PostForm;
+export default PostForm;
