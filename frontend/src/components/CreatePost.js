@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import './styles.css'; 
 
 const CreatePost = ({ onPostCreated }) => {
     const [formData, setFormData] = useState({ title: '', content: '', country: '', dateOfVisit: '' });
@@ -32,50 +33,50 @@ const CreatePost = ({ onPostCreated }) => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-6 bg-gray-100">
-            <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">Create a New Post</h3>
-            {message && <div className={message.includes('Error') ? 'text-red-500' : 'text-green-500'}>{message}</div>}
-            <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+        <div className="section">
+            <h3>Create a New Post</h3>
+            {message && <div className={message.includes('Error') ? 'error' : 'success'}>{message}</div>}
+            <form onSubmit={handleSubmit}>
+                <label htmlFor="title">Title:</label>
                 <input
                     type="text"
+                    id="title"
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
                     placeholder="Post Title"
-                    className="border p-2 rounded"
                     required
                 />
+                <label htmlFor="content">Content:</label>
                 <textarea
+                    id="content"
                     name="content"
                     value={formData.content}
                     onChange={handleChange}
                     placeholder="Post Content"
-                    className="border p-2 rounded"
                     rows="4"
                     required
                 />
+                <label htmlFor="country">Country:</label>
                 <input
                     type="text"
+                    id="country"
                     name="country"
                     value={formData.country}
                     onChange={handleChange}
                     placeholder="Country"
-                    className="border p-2 rounded"
                     required
                 />
+                <label htmlFor="dateOfVisit">Date of Visit:</label>
                 <input
                     type="date"
+                    id="dateOfVisit"
                     name="dateOfVisit"
                     value={formData.dateOfVisit}
                     onChange={handleChange}
-                    className="border p-2 rounded"
                     required
                 />
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-blue-400"
-                >
+                <button type="submit" disabled={loading}>
                     {loading ? 'Creating...' : 'Create Post'}
                 </button>
             </form>
