@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './styles.css'; 
 
 const Feed = ({ user, setLoggedIn }) => {
     const [posts, setPosts] = useState([]);
@@ -69,51 +70,43 @@ const Feed = ({ user, setLoggedIn }) => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-6 bg-gray-100 min-h-screen">
+        <div className="container">
             <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">Your Feed</h3>
-            {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
+            {error && <div className="error">{error}</div>}
             <div className="grid grid-cols-1 gap-6">
                 {posts.map(post => (
-                    <div
-                        key={post.id}
-                        className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-auto border border-gray-200 hover:shadow-xl transition-all duration-300"
-                    >
-                        <h4 className="text-xl font-semibold text-gray-900 mb-3 line-clamp-1">
+                    <div key={post.id} className="post-card">
+                        <h4>
                             {post.title} by {(post.fn && post.sn) ? `${post.fn} ${post.sn}` : 'Anonymous'}
                         </h4>
-                        <p className="text-gray-600 mb-4 line-clamp-3">{post.content}</p>
-                        <div className="flex flex-col space-y-2">
-                            <p className="text-sm text-gray-500 font-medium">Country: {post.country}</p>
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-200">
-                                <div className="flex items-center space-x-3">
-                                    <span className="flex items-center text-sm text-gray-700">
-                                        <span className="mr-1">👍</span> {post.likes}
-                                    </span>
-                                    <span className="flex items-center text-sm text-gray-700">
-                                        <span className="mr-1">👎</span> {post.dislikes}
-                                    </span>
-                                </div>
-                                <div className="flex space-x-2">
-                                    <button
-                                        onClick={() => handleLike(post.id, 'like')}
-                                        className="text-sm text-blue-600 hover:text-blue-800"
-                                    >
-                                        Like
-                                    </button>
-                                    <button
-                                        onClick={() => handleLike(post.id, 'dislike')}
-                                        className="text-sm text-red-600 hover:text-red-800"
-                                    >
-                                        Dislike
-                                    </button>
-                                    <button
-                                        onClick={() => handleFollowToggle(post.user_id, post.isFollowing)}
-                                        className={`text-sm px-2 py-1 rounded ${post.isFollowing ? 'bg-red-500 text-white hover:bg-red-600' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
-                                    >
-                                        {post.isFollowing ? 'Unfollow' : 'Follow'}
-                                    </button>
-                                </div>
-                            </div>
+                        <p>{post.content}</p>
+                        <div className="metadata">
+                            <p className="country">Country: {post.country}</p>
+                            <p className="date">Date of Visit: {post.date_of_visit || 'N/A'}</p>
+                        </div>
+                        <div className="like-dislike-display">
+                            <span className="like">👍 {post.likes}</span>
+                            <span className="dislike">👎 {post.dislikes}</span>
+                        </div>
+                        <div className="action-buttons">
+                            <button
+                                onClick={() => handleLike(post.id, 'like')}
+                                className="like-btn"
+                            >
+                                Like
+                            </button>
+                            <button
+                                onClick={() => handleLike(post.id, 'dislike')}
+                                className="dislike-btn"
+                            >
+                                Dislike
+                            </button>
+                            <button
+                                onClick={() => handleFollowToggle(post.user_id, post.isFollowing)}
+                                className={`follow-btn ${post.isFollowing ? 'bg-red-500 hover:bg-red-600' : 'bg-blue-500 hover:bg-blue-600'} text-white`}
+                            >
+                                {post.isFollowing ? 'Unfollow' : 'Follow'}
+                            </button>
                         </div>
                     </div>
                 ))}
