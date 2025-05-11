@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import './styles.css'; 
 
 const CountryData = ({ apiKey }) => {
     const [countries, setCountries] = useState([]);
@@ -52,16 +53,16 @@ const CountryData = ({ apiKey }) => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto p-6 bg-gray-100 min-h-screen">
+        <div className="container">
             <h3 className="text-3xl font-bold text-gray-800 mb-8 text-center">Country Data</h3>
-            {loading && <div className="text-center">Loading...</div>}
-            {message && <div className={message.includes('Error') ? 'text-red-500' : 'text-green-500'}>{message}</div>}
+            {loading && <div className="loading">Loading...</div>}
+            {message && <div className={message.includes('Error') ? 'error' : 'success'}>{message}</div>}
             {!loading && (
                 <>
                     <select
                         onChange={handleChange}
                         value={selectedCountry}
-                        className="border p-2 rounded w-full mb-4"
+                        className="mb-4"
                         disabled={countries.length === 0}
                     >
                         <option value="">Select a Country</option>
@@ -72,8 +73,8 @@ const CountryData = ({ apiKey }) => {
                         ))}
                     </select>
                     {countryData && (
-                        <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                            <h4 className="text-xl font-semibold text-gray-900 mb-3">{countryData.name}</h4>
+                        <div className="country-data-card">
+                            <h4>{countryData.name}</h4>
                             <p><strong>Capital:</strong> {countryData.capital || 'N/A'}</p>
                             <p><strong>Currency:</strong> {countryData.currencies?.map(c => `${c.name} (${c.code})`).join(', ') || 'N/A'}</p>
                             <p><strong>Languages:</strong> {countryData.languages?.join(', ') || 'N/A'}</p>
