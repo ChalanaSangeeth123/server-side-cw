@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BrowserRouter as Router, Route, Routes, Link, Navigate } from 'react-router-dom';
 import Register from './components/Register';
 import Login from './components/Login';
-import APIKey from './components/APIKey';
-import CountryData from './components/CountryData';
 import Feed from './components/Feed';
 import Profile from './components/Profile';
 import Search from './components/Search';
@@ -42,6 +40,7 @@ const App = () => {
             await axios.post('http://localhost:5000/logout', {}, { withCredentials: true });
             setLoggedIn(false);
             setUser(null);
+            setApiKey('');
         } catch (error) {
             console.error('Logout failed:', error);
         }
@@ -60,8 +59,6 @@ const App = () => {
                         <>
                             <Link to="/feed">Feed</Link> | 
                             <Link to="/profile">Profile</Link> | 
-                            <Link to="/apikey">API Key</Link> | 
-                            <Link to="/country">Countries</Link> | 
                             <Link to="/create-post">Create Post</Link> | 
                             <button onClick={handleLogout}>Logout</button>
                         </>
@@ -73,15 +70,13 @@ const App = () => {
                     )}
                 </nav>
                 <Routes>
-                    <Route path="/" element={<Home />} />
+                    <Route path="/" element={<Home apiKey={apiKey} setApiKey={setApiKey} />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/login" element={<Login setLoggedIn={setLoggedIn} setUser={setUser} checkSession={checkSession} />} />
-                    <Route path="/apikey" element={loggedIn ? <APIKey setApiKey={setApiKey} /> : <Navigate to="/login" />} />
-                    <Route path="/country" element={loggedIn ? <CountryData apiKey={apiKey} /> : <Navigate to="/login" />} />
-                    <Route path="/feed" element={loggedIn ? <Feed user={user} setLoggedIn={setLoggedIn} /> : <Navigate to="/login" />} />
+                    <Route path="/feed" element={loggedIn ? <Feed user={user} setLoggedIn={setLoggedIn} apiKey={apiKey} /> : <Navigate to="/login" />} />
                     <Route path="/profile" element={loggedIn ? <Profile user={user} /> : <Navigate to="/login" />} />
                     <Route path="/search" element={loggedIn ? <Search /> : <Navigate to="/login" />} />
-                    <Route path="/create-post" element={loggedIn ? <CreatePost onPostCreated={() => window.location.reload()} /> : <Navigate to="/login" />} />
+                    <Route path="/create-post" element={loggedIn ? <CreatePost apiKey={apiKey} setApiKey={setApiKey} onPostCreated={() => window.location.reload()} /> : <Navigate to="/login" />} />
                 </Routes>
             </div>
         </Router>
