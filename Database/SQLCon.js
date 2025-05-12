@@ -7,6 +7,7 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
         console.error('Database connection error:', err);
     } else {
         console.log('Connected to SQLite database');
+
         // Create users table
         pool.run(`
             CREATE TABLE IF NOT EXISTS users (
@@ -18,6 +19,7 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
+
         // Create api_keys table with usage tracking
         pool.run(`
             CREATE TABLE IF NOT EXISTS apikeys (
@@ -30,7 +32,8 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
                 FOREIGN KEY (owner) REFERENCES users(id)
             )
         `);
-        // Create blog_posts table for storing blog posts
+
+        // Create blog_posts table
         pool.run(`
             CREATE TABLE IF NOT EXISTS blog_posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,9 +45,42 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
-        `);
+        `, (err) => {
+            if (err) {
+                console.error('Error creating blog_posts table:', err);
+                return;
+            }
 
-        // Create likes table for tracking likes/dislikes on blog posts
+            // Add additional columns to blog_posts table 
+            const columnsToAdd = [
+                { name: 'capital', type: 'TEXT' },
+                { name: 'currency', type: 'TEXT' },
+                { name: 'languages', type: 'TEXT' },
+                { name: 'flag', type: 'TEXT' }
+            ];
+
+            pool.all(`PRAGMA table_info(blog_posts);`, (err, columns) => {
+                if (err) {
+                    console.error('Error fetching blog_posts schema:', err);
+                    return;
+                }
+
+                columnsToAdd.forEach(col => {
+                    const exists = columns.some(column => column.name === col.name);
+                    if (!exists) {
+                        pool.run(`ALTER TABLE blog_posts ADD COLUMN ${col.name} ${col.type}`, (err) => {
+                            if (err) {
+                                console.error(`Error adding column ${col.name}:`, err);
+                            } else {
+                                console.log(`Column ${col.name} added to blog_posts table.`);
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        // Create likes table
         pool.run(`
             CREATE TABLE IF NOT EXISTS likes (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -54,11 +90,11 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id),
                 FOREIGN KEY (blog_post_id) REFERENCES blog_posts(id),
-                UNIQUE(user_id, blog_post_id) -- Prevent multiple likes/dislikes from the same user on the same post
+                UNIQUE(user_id, blog_post_id)
             )
         `);
 
-        // Create follows table for the user following system
+        // Create follows table
         pool.run(`
             CREATE TABLE IF NOT EXISTS follows (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,7 +103,7 @@ const pool = new sqlite3.Database(process.env.DATABASE_PATH || './countries.db',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (follower_id) REFERENCES users(id),
                 FOREIGN KEY (following_id) REFERENCES users(id),
-                UNIQUE(follower_id, following_id) -- Prevent duplicate follows
+                UNIQUE(follower_id, following_id)
             )
         `);
     }
