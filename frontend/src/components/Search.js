@@ -78,7 +78,7 @@ const Search = () => {
                         <h4>{post.title}</h4>
                         <p>{post.content}</p>
                         <div className="metadata">
-                            <p>Author: {post.username || 'Unknown'}</p>
+                            <p>Author: {(post.fn && post.sn) ? `${post.fn} ${post.sn}` : 'Anonymous'}</p>
                             <p className="country">Country: {post.country}</p>
                             <p className="date">Date of Visit: {post.date_of_visit || 'N/A'}</p>
                         </div>
