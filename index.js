@@ -63,12 +63,34 @@ app.get('/api/countries/list', apikeyMiddleware, async (req, res) => {
 // Blog post routes
 const blogPostService = new BlogPostService();
 app.get('/api/posts', async (req, res) => {
-    const { country, username } = req.query;
-    let result;
-    if (country || username) {
-        result = await blogPostService.getAll();
-        if (result.success) {
-            let posts = result.data;
+    const { country, username, sort = 'newest' } = req.query;
+    try {
+        let query = `
+            SELECT 
+                bp.*, 
+                u.fn, 
+                u.sn,
+                (SELECT COUNT(*) FROM likes l WHERE l.blog_post_id = bp.id AND l.type = 'like') AS likes,
+                (SELECT COUNT(*) FROM likes l WHERE l.blog_post_id = bp.id AND l.type = 'dislike') AS dislikes
+            FROM blog_posts bp
+            JOIN users u ON bp.user_id = u.id
+        `;
+        let orderBy = '';
+        if (sort === 'newest') {
+            orderBy = 'ORDER BY bp.created_at DESC';
+        } else if (sort === 'most-liked') {
+            orderBy = 'ORDER BY likes DESC, bp.created_at DESC';
+        } else {
+            orderBy = 'ORDER BY bp.created_at DESC';
+        }
+        query += ` ${orderBy}`;
+
+        const rows = await new Promise((resolve, reject) => {
+            pool.all(query, (err, rows) => (err ? reject(err) : resolve(rows)));
+        });
+
+        let posts = rows;
+        if (country || username) {
             if (country) {
                 posts = posts.filter(post => post.country.toLowerCase().includes(country.toLowerCase()));
             }
@@ -78,17 +100,12 @@ app.get('/api/posts', async (req, res) => {
                     return fullName.includes(username.toLowerCase());
                 });
             }
-            res.json({ success: true, data: posts });
-        } else {
-            res.status(500).json(result);
         }
-    } else {
-        result = await blogPostService.getAll();
-        if (result.success) {
-            res.json(result);
-        } else {
-            res.status(500).json(result);
-        }
+
+        res.json({ success: true, data: posts });
+    } catch (error) {
+        console.error('Error fetching posts:', error);
+        res.status(500).json({ success: false, error: 'Server error: ' + error.message });
     }
 });
 app.post('/api/posts', checkSession, async (req, res) => {
