@@ -1,4 +1,4 @@
-const LikesDAO = require('../DAOs/LikeDAO');
+const LikesDAO = require('../DAOs/LikeDAO'); // Fixed import
 const { createResponse } = require('../Utilities/createResponse');
 
 class LikesService {
@@ -12,6 +12,7 @@ class LikesService {
         if (!postId || !type) {
             return createResponse(false, null, 'Post ID and type are required');
         }
+        console.log(`Processing ${type} for user ${userId}, post ${postId}`); // Debug
         return await this.likesDAO.like(userId, postId, type);
     }
 
@@ -20,6 +21,7 @@ class LikesService {
         if (!postId) {
             return createResponse(false, null, 'Post ID is required');
         }
+        console.log(`Fetching likes for post ${postId}`); // Debug
         return await this.likesDAO.getLikes(postId);
     }
 }
