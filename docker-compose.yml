@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data              # Store DB file in ./data (persistent)
+    environment:
+      - DATABASE_PATH=/app/data/countries.db
