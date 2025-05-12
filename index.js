@@ -7,23 +7,21 @@ const APIKey = require('./Services/ApiKeyService');
 const countryRouter = require('./Routers/CountryRouter');
 const followRouter = require('./Routers/FollowRouter');
 const likesRouter = require('./Routers/LikesRouter');
+console.log('LikesRouter loaded:', !!likesRouter); // Debug
 const apikeyMiddleware = require('./Middleware/APIAuth/APIAuthMiddleWare');
 const checkSession = require('./Middleware/SessionAuth/SessionAuth');
 const path = require('path');
 const axios = require('axios');
-const pool = require('./Database/SQLCon'); // Added for direct DB access
+const pool = require('./Database/SQLCon');
 require('dotenv').config();
 
-// Debug: Log the SESSION_SECRET to verify it's loaded
 console.log('SESSION_SECRET:', process.env.SESSION_SECRET);
 
-// Ensure SESSION_SECRET is defined
 if (!process.env.SESSION_SECRET) {
     console.error('Error: SESSION_SECRET is not defined in .env file');
     process.exit(1);
 }
 
-// Initialize Express app
 const app = express();
 
 // Middleware setup
@@ -43,6 +41,12 @@ app.use(session({
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Debug middleware to log all incoming requests
+app.use((req, res, next) => {
+    console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
+    next();
+});
 
 // API routes
 app.use('/api/countries', apikeyMiddleware, countryRouter);
@@ -275,8 +279,9 @@ app.post('/getapikey', checkSession, async (req, res) => {
     res.json(data);
 });
 
-// Handle client-side routing
+// Handle client-side routing with logging
 app.get('*', (req, res) => {
+    console.log('Catch-all route hit:', req.originalUrl);
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
