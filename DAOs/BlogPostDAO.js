@@ -4,12 +4,12 @@ const { createResponse } = require('../Utilities/createResponse');
 class BlogPostDAO {
     constructor() {}
 
-    async create(userId, title, content, country, dateOfVisit) {
+    async create(userId, title, content, country, dateOfVisit, capital, currency, languages, flag) {
         try {
             const result = await new Promise((resolve, reject) => {
                 pool.run(
-                    'INSERT INTO blog_posts (user_id, title, content, country, date_of_visit) VALUES (?, ?, ?, ?, ?)',
-                    [userId, title, content, country, dateOfVisit],
+                    'INSERT INTO blog_posts (user_id, title, content, country, date_of_visit, capital, currency, languages, flag) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    [userId, title, content, country, dateOfVisit, capital, currency, languages, flag],
                     (err) => {
                         if (err) reject(err);
                         resolve();
@@ -18,15 +18,16 @@ class BlogPostDAO {
             });
             return createResponse(true, 'Post created');
         } catch (error) {
-            return createResponse(false, null, error);
+            return createResponse(false, null, error.message);
         }
     }
 
-    async getAll() {
+    async getAll(page = 1, limit = 10) {
+        const offset = (page - 1) * limit;
         return new Promise((resolve, reject) => {
             pool.all(
-                'SELECT bp.*, u.fn, u.sn FROM blog_posts bp JOIN users u ON bp.user_id = u.id ORDER BY bp.created_at DESC',
-                [],
+                'SELECT bp.*, u.fn, u.sn FROM blog_posts bp JOIN users u ON bp.user_id = u.id ORDER BY bp.created_at DESC LIMIT ? OFFSET ?',
+                [limit, offset],
                 (err, rows) => {
                     if (err) reject(err);
                     resolve(createResponse(true, rows));
@@ -44,12 +45,12 @@ class BlogPostDAO {
         });
     }
 
-    async update(id, userId, title, content, country, dateOfVisit) {
+    async update(id, userId, title, content, country, dateOfVisit, capital, currency, languages, flag) {
         try {
             const result = await new Promise((resolve, reject) => {
                 pool.run(
-                    'UPDATE blog_posts SET title = ?, content = ?, country = ?, date_of_visit = ? WHERE id = ? AND user_id = ?',
-                    [title, content, country, dateOfVisit, id, userId],
+                    'UPDATE blog_posts SET title = ?, content = ?, country = ?, date_of_visit = ?, capital = ?, currency = ?, languages = ?, flag = ? WHERE id = ? AND user_id = ?',
+                    [title, content, country, dateOfVisit, capital, currency, languages, flag, id, userId],
                     function (err) {
                         if (err) reject(err);
                         if (this.changes === 0) reject(new Error('Post not found or not authorized'));
@@ -59,7 +60,7 @@ class BlogPostDAO {
             });
             return createResponse(true, 'Post updated');
         } catch (error) {
-            return createResponse(false, null, error);
+            return createResponse(false, null, error.message);
         }
     }
 
@@ -68,8 +69,9 @@ class BlogPostDAO {
             pool.run(
                 'DELETE FROM blog_posts WHERE id = ? AND user_id = ?',
                 [id, userId],
-                (err) => {
+                function (err) {
                     if (err) reject(err);
+                    if (this.changes === 0) reject(new Error('Post not found or not authorized'));
                     resolve(createResponse(true, 'Post deleted'));
                 }
             );
