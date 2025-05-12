@@ -2,22 +2,26 @@
 
 ## Overview
 
-A secure API middleware service developed for the **University of Westminster 6COSC022W Advanced Server-Side Programming Coursework 1 (2024/25)**. This service interfaces with the `restcountries.com` API to provide country data while implementing user authentication, API key management, and usage tracking features.
+A secure API service developed for the **University of Westminster 6COSC022W Advanced Server-Side Programming Coursework (2024/25)**. This service integrates with the `restcountries.com` API to provide country data and includes a social media platform for users to create, like, dislike, comment on, and follow blog posts about travel experiences. It features user authentication, API key management, session-based security, and a React frontend.
 
 ## Features
 
-- **User Authentication**: Secure registration and login with session management
-- **API Key Management**: Generation and validation of API keys for authenticated users
-- **Country Data API**: Access to country details including name, capital, currencies, languages, and flag
-- **API Key Usage Tracking**: Monitoring of key usage count and last used timestamp
-- **React Frontend**: User-friendly interface for registration, login, and API key management
-- **Docker Support**: Containerization for consistent deployment
+- **User Authentication**: Secure registration, login, and logout with session management.
+- **API Key Management**: Generation and validation of API keys for authenticated users to access country data.
+- **Country Data API**: Fetch country details (name, capital, currencies, languages, flag) from `restcountries.com`.
+- **Blog Post Management**: Create, update, delete, and fetch blog posts with country-based filtering, username filtering, and sorting by `newest`, `most-liked`, or `most-commented`.
+- **Likes and Dislikes**: Users can like or dislike posts, with counts tracked in the database.
+- **Follow/Unfollow**: Users can follow others to view their posts in a personalized feed.
+- **Search**: Search posts by country or username.
+- **API Key Usage Tracking**: Monitors API key usage count and last used timestamp.
+- **React Frontend**: User-friendly interface for authentication, API key management, post creation, and social interactions.
+- **Docker Support**: Containerization for consistent deployment.
 
 ## Technologies
 
 - **Backend**: Node.js (v22.13.1), Express.js
 - **Database**: SQLite
-- **Security**: bcrypt, express-session
+- **Security**: bcrypt, express-session, CORS
 - **Frontend**: React
 - **API Integration**: axios
 - **Containerization**: Docker
@@ -82,7 +86,7 @@ Access the application at http://localhost:5000
 docker build -t country-api .
 
 # Run the container
-docker run -p 5000:5000 country-api
+docker run -d -p 5000:5000 -v C:/Users/Chalana/Documents/GitHub/server-side/countries.db:/app/countries.db country-api
 ```
 
 Access the application at http://localhost:5000
@@ -100,6 +104,11 @@ Access the application at http://localhost:5000
 - **Endpoint**: POST /api/login
 - **Description**: Authenticate a user
 - **Body**: `{ "username": "user", "password": "password" }`
+
+#### User LogOut
+- **Endpoint**: POST /api/logout
+- **Description**: End user session
+- **Body**: `{ "success": true, "message": "Logged out successfully" }`
 
 ### API Key Management
 
@@ -137,6 +146,200 @@ Access the application at http://localhost:5000
     "error": null
   }
   ```
+  #### Blog Post Endpoints
+- **Endpoint**: GET /api/posts
+- **Description**: Fetch all blog posts with optional sorting and filtering
+- **Query Parameters**: sort: newest, most-liked (default: newest)
+                        country: Filter by country (e.g., France)
+                        username: Filter by user’s full name
+- **Example**: `GET /api/posts?sort=most-liked&country=France`
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": [
+      {
+        "id": 5,
+        "title": "I travel to Japan",
+        "content": "I Eat lots of sushi.",
+        "country": "Japan",
+        "likes": 4,
+        "dislikes": 1,
+        "fn": "hello",
+        "sn": "world",
+      }
+    ]
+  }
+  ```
+  #### Get Single Post
+- **Endpoint**: GET /api/posts/:id
+- **Description**: Fetch details for a specific post
+- **Example**: `GET /api/posts/5`
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+    "id": 5,
+    "title": "I travel to Japan",
+    "content": "I Eat lots of sushi.",
+    "country": "Japan",
+    "likes": 4,
+    "dislikes": 1,
+    "comment_count": 0,
+  }
+  }
+  ```
+
+#### Create Post
+- **Endpoint**: GET api/posts
+- **Description**: Create a new blog post
+- **Authentication**: Requires active session
+- **Response**:
+  ```json
+  { "success": true, 
+    "data": { 
+    "id": 6, 
+    ... 
+    } 
+  }
+  ```
+
+#### Update Post
+- **Endpoint**: PUT /api/posts
+- **Description**: Update an existing post (user must be the author)
+- **Authentication**: Requires active session
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Post updated"
+  }
+  ```
+
+#### Delete Post
+- **Endpoint**: DELETE /api/posts
+- **Description**: Delete a post (user must be the author)
+- **Authentication**: Requires active session
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Post deleted"
+  }
+  ```
+
+#### Search Post
+- **Endpoint**: GET /api/posts/search
+- **Description**: Search posts by country or username
+- **Authentication**: Requires active session
+- **Example**: GET /api/posts/search?q=France&type=country
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": [
+    {
+      "id": 5,
+      "title": "I travel to Japan",
+      ...
+    },
+    ...
+  ]
+  }
+  ```
+
+#### Likes and Dislikes
+- **Endpoint**: GET /api/likes
+- **Description**: Fetch like and dislike counts for a post
+- **Example**: GET /api/likes?postId=5
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "likes": 4,
+      "dislikes": 1
+    }
+  }
+  ```
+
+#### Like/Dislike a Post
+- **Endpoint**: POST /api/likes
+- **Description**: Like or dislike a post.
+- **Authentication**: Requires active session
+- **Response**:
+  ```json
+  { "success": true, 
+    "message": "Post liked" 
+  }
+  ```
+
+#### Follow Endpoints
+- **Endpoint**: POST /api/follow
+- **Description**: Follow another user
+- **Authentication**: Requires active session
+- **Body**: { "followingId": 16 }
+- **Response**:
+  ```json
+  { "success": true, 
+    "message": "Followed successfully" 
+  }
+  ```
+
+- **Endpoint**: DELETE /api/follow/:userId
+- **Description**: Unfollow a user
+- **Authentication**: Requires active session
+- **Example**: DELETE /api/follow/16
+- **Response**:
+  ```json
+  { "success": true, 
+    "message": "Unfollowed successfully" 
+  }
+  ```
+
+- **Endpoint**: GET /api/following
+- **Description**: Fetch users the current user is following
+- **Authentication**: Requires active session
+- **Response**:
+  ```json
+  { 
+    "success": true,
+    "data": [{ "id": 16, "fn": "test", "sn": "user" }, ...]
+  }
+  ```
+
+- **Endpoint**: GET /api/is-following/:userId
+- **Description**: Check if the current user is following another user
+- **Authentication**: Requires active session
+- **Response**:
+  ```json
+  { 
+    "success": true, 
+    "isFollowing": true
+  }
+  ```
+
+#### Feed Endpoint
+- **Endpoint**: GET /api/feed
+- **Description**: Fetch posts from users the current user follows
+- **Authentication**: Requires active session
+- **Response**:
+  ```json
+  { 
+    "success": true,
+      "data": [
+        {
+          "id": 2,
+          "title": "I travel to Italy",
+          "content": "I Eat lots of pizza.",
+          ...
+        },
+        ...
+      ]
+  }
+  ```
+
 
 ## Error Handling
 
@@ -160,6 +363,31 @@ Access the application at http://localhost:5000
   }
   ```
 
+- **Unauthorized** (401):
+  ```json
+  {
+    "success": false,
+    "error": "Unauthorized: No session found"
+  }
+  ```
+
+- **Not Found** (404):
+  ```json
+  {
+    "success": false,
+    "error": "Post not found"
+  }
+  ```
+
+- **Server Error** (500):
+  ```json
+  {
+    "success": false,
+    "error": "Server error: <message>"
+  }
+  ```
+
+
 ## API Key Usage Tracking
 
 The system automatically tracks:
@@ -174,33 +402,80 @@ This information is stored in the `apikeys` table and updated on each successful
 server-side/
 ├── DAOs/                 # Data Access Objects
 │   ├── APIKeyDAO.js
+│   ├── BlogPostDAO.js
+│   ├── FollowDAO.js
+│   ├── LikeDAO.js
 │   ├── CountryDAO.js
 │   └── UserDAO.js
 ├── Database/
 │   └── SQLCon.js         # Database connection
+├── Middleware/
+│   ├── APIAuth/
+│   │   └── APIAuthMiddleWare.js
+│   └── SessionAuth/
+│       └── SessionAuth.js
 ├── Routers/
-│   └── CountryRouter.js  # API route definitions
+│   ├── AuthRoutes.js
+│   ├── BlogPostRoutes.js
+│   ├── CountryRouter.js
+│   ├── FollowRouter.js
+│   ├── LikesRouter.js
+│   ├── SearchRouter.js
+│   └── SocialRouter.js
 ├── Services/
-│   ├── APIKey.js         # API key management
-│   ├── CountryService.js # Country data handling
-│   └── UserService.js    # Authentication logic
+│   ├── APIKey.js
+│   ├── BlogPostService.js
+│   ├── CountryService.js
+│   ├── FollowService.js
+│   ├── LikesService.js
+│   └── UserService.js
 ├── Utilities/
-│   ├── bcryptUtil.js     # Password encryption
-│   └── createResponse.js # Response formatting
+│   ├── bcryptUtil.js
+│   └── createResponse.js
 ├── frontend/             # React frontend source
 ├── public/               # Built frontend files
 ├── countries.db          # SQLite database
 ├── Dockerfile
 ├── index.js              # Application entry point
+├── .env                  # Environment variables
 └── package.json
 ```
 
 ## Testing
 
-1. **Registration/Login**: Visit http://localhost:5000 to register and log in
-2. **API Key Generation**: Generate an API key from the dashboard after login
-3. **Data Fetching**: Test the API endpoint with your generated key
-4. **Security Testing**: Verify that unauthorized requests are properly rejected
+1. **Registration/Login**:
+   - Visit http://localhost:5000 to register and log in.
+   - Test session persistence by accessing `GET /check-session` in Postman.
+
+2. **API Key Generation**:
+   - Log in and generate an API key via the dashboard or `POST /getapikey` in Postman.
+   - Verify the key is returned in the response.
+
+3. **Country Data Fetching**:
+   - Test the country API with your generated key using `GET /api/countries/france?apiKey=your-api-key` in Postman.
+   - Confirm details like name, capital, and flag are returned.
+
+4. **Blog Post Management**:
+   - Create a post via the frontend or `POST /api/posts` in Postman (requires login).
+   - Fetch posts with sorting (`GET /api/posts?sort=most-liked`) and filtering (`GET /api/posts?country=France`).
+   - Update or delete a post via `PUT /api/posts` or `DELETE /api/posts` (requires authorship).
+
+5. **Likes and Dislikes**:
+   - Like/dislike a post via the frontend or `POST /api/likes` in Postman (e.g., `{ "postId": 5, "type": "like" }`).
+   - Check counts with `GET /api/likes?postId=5`.
+
+6. **Follows and Feed**:
+   - Follow a user via the frontend or `POST /api/follow` in Postman (e.g., `{ "followingId": 16 }`).
+   - Check follow status with `GET /api/is-following/16`.
+   - View followed users’ posts with `GET /api/feed`.
+
+7. **Search**:
+   - Search posts by country or username via the frontend or `GET /api/posts/search?q=France&type=country` in Postman.
+   - Confirm relevant posts are returned.
+
+8. **Security Testing**:
+   - Verify unauthorized requests (e.g., `GET /api/posts` without a session) are rejected with a 401 error.
+   - Test invalid API keys with `GET /api/countries/france?apiKey=invalid-key` to ensure a 401 response.
 
 ## License
 
