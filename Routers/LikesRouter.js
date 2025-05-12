@@ -11,7 +11,8 @@ router.post('/like', checkSession, async (req, res) => {
     res.json(result);
 });
 
-router.get('/likes', async (req, res) => {
+router.get('/', async (req, res) => {
+    console.log('Get likes request received:', req.query); // Debug
     const result = await likesService.getLikes(req);
     res.json(result);
 });
